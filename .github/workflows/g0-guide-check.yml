@@ -1,0 +1,21 @@
+name: G0 teacher guide checks
+on:
+  pull_request:
+    paths:
+      - 'docs/enseignants/**'
+      - 'tests/test_teacher_guide.py'
+      - '.github/workflows/g0-guide-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guide-static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check teacher guide
+        run: python -m unittest discover -s tests -p 'test_teacher_guide.py' -v
