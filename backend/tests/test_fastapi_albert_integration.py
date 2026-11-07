@@ -44,42 +44,23 @@ def test_adapter_unavailable_without_explicit_injection(client):
 
 
 @pytest.mark.parametrize("mode", ["eleve", "enseignant", "audit"])
-def test_simulated_adapter_through_fastapi_for_all_modes(client, mode):
-    def handler(request):
-        assert request.headers["Authorization"] == "Bearer " + SECRET
-        assert request.url.host == "albert.api.etalab.gouv.fr"
-        assert request.url.path == "/v1/chat/completions"
-        return httpx.Response(200, json={
-            "choices": [{"message": {"content": "Réponse pédagogique simulée"},
-                         "finish_reason": "stop"}]
-        })
-    app.dependency_overrides[get_albert_adapter] = lambda: make_adapter(handler)
+def test_legacy_never_uses_injected_provider(client, mode):
+    def fail(request):
+        raise AssertionError("Unexpected outbound request")
+    app.dependency_overrides[get_albert_adapter] = lambda: make_adapter(fail)
     response = client.post("/api/chat", json=payload(mode=mode))
-    assert response.status_code == 200
-    data = response.json()
-    assert data["reply"] == "Réponse pédagogique simulée"
-    assert data["model_id"] == MODEL
-    assert data["finish_reason"] == "stop"
-    assert "simulated_provider_transport" in data["warnings"]
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "invalid_input"
     assert SECRET not in response.text
 
 
-@pytest.mark.parametrize("upstream,expected,code", [
-    (401, 503, "provider_auth_failed"),
-    (403, 503, "provider_auth_failed"),
-    (429, 429, "provider_rate_limited"),
-    (500, 502, "provider_unavailable"),
-    (503, 503, "provider_busy"),
-    (404, 400, "provider_model_not_found"),
-    (422, 400, "provider_invalid_request"),
-])
-def test_error_mapping_and_no_sensitive_data(client, upstream, expected, code):
-    app.dependency_overrides[get_albert_adapter] = lambda: make_adapter(
-        lambda request: httpx.Response(upstream, text=MARKER + SECRET)
-    )
+@pytest.mark.parametrize("upstream", [401, 403, 429, 500, 503, 404, 422])
+def test_legacy_never_reaches_upstream(client, upstream):
+    def fail(request):
+        raise AssertionError(f"Provider must not be reached: {upstream}")
+    app.dependency_overrides[get_albert_adapter] = lambda: make_adapter(fail)
     response = client.post("/api/chat", json=payload(message=MARKER))
-    assert response.status_code == expected
-    assert response.json()["detail"]["code"] == code
+    assert response.status_code == 400
     assert SECRET not in response.text
     assert MARKER not in response.text
 
@@ -90,7 +71,7 @@ def test_model_rejected_before_transport(client):
     app.dependency_overrides[get_albert_adapter] = lambda: make_adapter(fail)
     response = client.post("/api/chat", json=payload(model="unknown-model"))
     assert response.status_code == 400
-    assert response.json()["detail"]["code"] == "model_not_allowed"
+    assert response.json()["detail"]["code"] == "invalid_input"
 
 
 def test_mock_stays_mock_even_with_adapter_injected(client):
