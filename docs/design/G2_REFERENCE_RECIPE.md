@@ -37,3 +37,10 @@ Aucune fusion ni publication.
 - Adaptation responsive pour écrans étroits : image centrée et plafonnée en hauteur.
 - Vérification visuelle, compilation, trois thèmes et interactions : NON TESTÉS dans cette intervention.
 - G2 reste EN VÉRIFICATION. Aucune fusion ni publication.
+
+## G2-R4 — 2026-11-07
+- En mode vidéoprojecteur, masquer le logo PNG sur fond sombre et afficher provisoirement un symbole atomique monochrome sur fond blanc.
+- Forcer les titres, sous-titres, exemples Python, contrôles et résultats à utiliser un texte noir sur fond blanc.
+- Maintenir l'illustration gauche en niveaux de gris ; son tableau peut comporter des zones grises foncées propres à l'illustration, distinctes des surfaces d'interface.
+- Actif MicroAlbert transparent et indépendant : NON RÉALISÉ ; extraction/validation artistique nécessaires, ne pas prétendre que le PNG de composition est un sprite.
+- Compilation, captures comparatives et tests de régression : NON EXÉCUTÉS. G2-R4 EN VÉRIFICATION.
