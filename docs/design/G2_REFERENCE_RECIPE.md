@@ -44,3 +44,10 @@ Aucune fusion ni publication.
 - Maintenir l'illustration gauche en niveaux de gris ; son tableau peut comporter des zones grises foncées propres à l'illustration, distinctes des surfaces d'interface.
 - Actif MicroAlbert transparent et indépendant : NON RÉALISÉ ; extraction/validation artistique nécessaires, ne pas prétendre que le PNG de composition est un sprite.
 - Compilation, captures comparatives et tests de régression : NON EXÉCUTÉS. G2-R4 EN VÉRIFICATION.
+
+## G2-R5 — 2026-11-07
+- Anomalies confirmées par capture en mode sombre : titres des cartes presque illisibles, panneaux de code insuffisamment différenciés, aucune coloration syntaxique.
+- Introduction d'un composant React PythonExample pour les deux exemples visibles ; coloration sémantique des mots-clés for/in, des fonctions range/print et de la valeur numérique.
+- Palette CSS spécifique pour thèmes clair/sombre/projecteur, contraste renforcé des titres, champs, panneaux et boutons sombres.
+- Limitation : seuls les exemples statiques affichés sont colorés ; ce n'est pas encore un éditeur Python ni un moteur de coloration générale.
+- Compilation, contrôle de contraste automatisé, test navigateur et recette humaine : NON EXÉCUTÉS. G2-R5 EN VÉRIFICATION.
