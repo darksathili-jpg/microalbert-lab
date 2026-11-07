@@ -39,3 +39,60 @@
   .model-row{gap:8px}
   .tabs{margin:0}
 }
+
+/* G2-R4 — high-contrast projector mode: no dark backgrounds in UI chrome.
+   The original logo PNG contains an opaque dark square, so replace its display
+   in projector mode with a monochrome typographic atom until a transparent
+   source asset is approved. */
+.app[data-theme=projector] .logo .brand-icon{display:none}
+.app[data-theme=projector] .logo::before{
+  content:"⚛";
+  display:block;
+  flex:0 0 auto;
+  color:#000;
+  background:#fff;
+  font-family:"Segoe UI Symbol","DejaVu Sans",sans-serif;
+  font-size:3.5rem;
+  line-height:1;
+  text-align:center;
+}
+.app[data-theme=projector] .logo-title,
+.app[data-theme=projector] .logo-title .yellow,
+.app[data-theme=projector] .logo-title .orange,
+.app[data-theme=projector] .logo-sub,
+.app[data-theme=projector] .edition,
+.app[data-theme=projector] .model-row,
+.app[data-theme=projector] .model-row .hint,
+.app[data-theme=projector] .small,
+.app[data-theme=projector] .answer-content h2,
+.app[data-theme=projector] .example h3,
+.app[data-theme=projector] .answer-content code,
+.app[data-theme=projector] .simulation-result h2,
+.app[data-theme=projector] footer{color:#000}
+.app[data-theme=projector] textarea,
+.app[data-theme=projector] select,
+.app[data-theme=projector] input,
+.app[data-theme=projector] textarea::placeholder,
+.app[data-theme=projector] select:disabled{
+  color:#000;
+  background:#fff;
+  border-color:#333;
+  opacity:1;
+  -webkit-text-fill-color:#000;
+}
+.app[data-theme=projector] .answer,
+.app[data-theme=projector] .answer-content,
+.app[data-theme=projector] .lesson,
+.app[data-theme=projector] .lesson pre,
+.app[data-theme=projector] .example pre,
+.app[data-theme=projector] .simulation-result,
+.app[data-theme=projector] .warning{
+  background:#fff;
+  color:#000;
+  box-shadow:none;
+}
+.app[data-theme=projector] .sheet{box-shadow:none}
+.app[data-theme=projector] .mascot-panel{filter:grayscale(1)}
+@media(max-width:440px){
+  .app[data-theme=projector] .logo::before{font-size:2.3rem}
+}
