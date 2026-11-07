@@ -31,3 +31,9 @@ Aucune fusion ni publication.
 - Paquet ZIP de deux découpes PNG fourni à l'utilisateur ; ces images ne sont pas versionnées dans la branche GitHub et doivent être extraites localement dans frontend/public/.
 - Compilation TypeScript, tests backend, navigateur et recette de contraste non exécutés dans cette intervention ; G2-R2 reste EN VÉRIFICATION.
 - Ne pas fusionner ni publier.
+
+## G2-R3 — 2026-11-07
+- Corrigé le panneau de gauche pour respecter le ratio natif 374/916 du recadrage fourni, sans object-fit:cover ni étirement.
+- Adaptation responsive pour écrans étroits : image centrée et plafonnée en hauteur.
+- Vérification visuelle, compilation, trois thèmes et interactions : NON TESTÉS dans cette intervention.
+- G2 reste EN VÉRIFICATION. Aucune fusion ni publication.
