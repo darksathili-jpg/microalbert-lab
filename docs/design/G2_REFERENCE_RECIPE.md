@@ -24,3 +24,10 @@ Date : 2026-11-06. Statut : EN VÉRIFICATION, NON VALIDÉ.
 6. Recette humaine et décision explicite.
 
 Aucune fusion ni publication.
+
+## G2-R2 — 2026-11-07
+- Séparation effective dans le JSX entre fiche pédagogique statique et résultat conditionnel du simulateur ; le résultat ne s'affiche qu'après réponse.
+- Logo de référence désormais chargé via /microalbert-reference-logo.png avec symbole de repli.
+- Paquet ZIP de deux découpes PNG fourni à l'utilisateur ; ces images ne sont pas versionnées dans la branche GitHub et doivent être extraites localement dans frontend/public/.
+- Compilation TypeScript, tests backend, navigateur et recette de contraste non exécutés dans cette intervention ; G2-R2 reste EN VÉRIFICATION.
+- Ne pas fusionner ni publier.
