@@ -58,3 +58,11 @@ Aucune fusion ni publication.
 - Aucun éditeur, stockage, journal persistant, certification, connexion Albert API ou exécution Python n'est revendiqué.
 - Tests nécessaires : TypeScript build, trois onglets, changement d'onglet après requête, envoi dans chaque mode, modes clair/sombre/projecteur, responsive et contrôle du clavier.
 - Aucun test exécuté par l'assistant après cette modification ; statut EN VÉRIFICATION. Aucune fusion ni publication.
+
+## G2-R7 — recette navigateur préparée, 2026-11-07
+- Nouveau fichier tests/e2e/g2-r6-app.spec.cjs : quatre scénarios Playwright (espaces distincts, requête simulée isolée, thèmes/projecteur, largeur mobile).
+- Le test intercepte /api/chat, il n'atteste pas de l'intégration FastAPI réelle.
+- Prérequis : serveur Vite démarré sur 127.0.0.1:5173 ; depuis la racine, npx.cmd playwright test tests/e2e/g2-r6-app.spec.cjs --project=chromium (configuration locale Edge possible).
+- Exécuter séparément npm.cmd run build dans frontend et tests Python backend ; test de bout en bout avec serveur FastAPI réel à faire ensuite.
+- Tests non exécutés par l'assistant ; aucun résultat de réussite revendiqué.
+- Logo autonome et sprite sheet : jalon artistique ultérieur, ne pas remplacer la référence sans recette humaine.
