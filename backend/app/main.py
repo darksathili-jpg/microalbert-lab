@@ -3,9 +3,10 @@ import os
 import secrets
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
+from .albert_adapter import AlbertAdapter, ProviderError
 
 app = FastAPI(title="MicroAlbert Lab API", docs_url=None, redoc_url=None)
 app.add_middleware(
@@ -43,10 +44,32 @@ def health():
 def models():
     return {"data": [{"id": "microalbert-mock", "chat_capability": "confirmed_mock"}]}
 
+def get_albert_adapter() -> AlbertAdapter | None:
+    """Fail closed: only explicit test dependency overrides may provide an adapter.
+
+    No production HTTP transport or credential loading is enabled in G3-P2A.
+    """
+    return None
+
+
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest):
+async def chat(payload: ChatRequest, adapter: AlbertAdapter | None = Depends(get_albert_adapter)):
     if payload.model_id != "microalbert-mock":
-        raise HTTPException(status_code=400, detail={"code": "invalid_input", "message": "Modèle indisponible dans G1"})
+        if adapter is None:
+            raise HTTPException(status_code=400, detail={
+                "code": "invalid_input", "message": "Modèle indisponible dans cette version"
+            })
+        try:
+            answer = await adapter.chat(payload.model_id, payload.message)
+        except ProviderError as exc:
+            raise HTTPException(status_code=exc.status, detail={
+                "code": exc.code, "message": "Fournisseur indisponible ou requête refusée"
+            }) from None
+        return ChatResponse(
+            reply=answer.reply, model_id=answer.model_id,
+            finish_reason=answer.finish_reason, request_id=secrets.token_hex(8),
+            warnings=["simulated_provider_transport", "not_pedagogically_certified"],
+        )
     # Never echo the user input, secret, or an unverified AI claim.
     return ChatResponse(
         reply="Mode de démonstration : aucune requête n’a été envoyée à Albert API. "
