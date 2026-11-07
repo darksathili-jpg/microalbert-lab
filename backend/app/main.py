@@ -3,10 +3,11 @@ import os
 import secrets
 from typing import Literal
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from .albert_adapter import AlbertAdapter, ProviderError
+from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
 
 app = FastAPI(title="MicroAlbert Lab API", docs_url=None, redoc_url=None)
 app.add_middleware(
@@ -78,4 +79,56 @@ async def chat(payload: ChatRequest, adapter: AlbertAdapter | None = Depends(get
         finish_reason="stop",
         request_id=secrets.token_hex(8),
         warnings=["mock_provider", "not_a_pedagogical_answer"],
+    )
+
+
+# G3-P4B: protected demonstration route. No public token-issuing endpoint.
+# The original /api/chat remains legacy/mock for backward compatibility.
+_secure_registry = LocalTokenRegistry()
+_secure_limiter = FixedWindowRateLimiter(limit=5, window_seconds=60)
+
+
+def get_secure_registry() -> LocalTokenRegistry:
+    return _secure_registry
+
+
+def get_secure_limiter() -> FixedWindowRateLimiter:
+    return _secure_limiter
+
+
+def authenticated_principal(
+    authorization: str | None = Header(default=None),
+    registry: LocalTokenRegistry = Depends(get_secure_registry),
+) -> Principal:
+    try:
+        return registry.authenticate(authorization)
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+
+
+@app.post("/api/secure/chat", response_model=ChatResponse)
+def secure_chat(
+    payload: ChatRequest,
+    principal: Principal = Depends(authenticated_principal),
+    limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
+):
+    """Authenticated mock-only demonstration; never forwards to Albert."""
+    try:
+        authorize(principal, payload.mode, "chat:mock")
+        limiter.require(principal.subject)
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+    if payload.model_id != "microalbert-mock":
+        raise HTTPException(status_code=400, detail={
+            "code": "invalid_input", "message": "Modèle indisponible dans cette version"
+        })
+    return ChatResponse(
+        reply="Démonstration sécurisée : aucune requête envoyée à Albert API.",
+        model_id="microalbert-mock", finish_reason="stop",
+        request_id=secrets.token_hex(8),
+        warnings=["mock_provider", "authenticated_local_demo", "not_a_pedagogical_answer"],
     )
