@@ -43,8 +43,9 @@ def test_success_and_request_contract():
     (403, "provider_auth_failed", 503),
     (429, "provider_rate_limited", 429),
     (500, "provider_unavailable", 502),
-    (503, "provider_unavailable", 502),
-    (404, "provider_rejected", 502),
+    (503, "provider_busy", 503),
+    (404, "provider_model_not_found", 400),
+    (422, "provider_invalid_request", 400),
 ])
 def test_status_mapping_without_remote_body(status, code, app_status):
     def handler(request):
