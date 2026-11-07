@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
+import PythonLab from './PythonLab';
 
 type Mode = 'eleve' | 'enseignant' | 'audit';
 type Theme = 'light' | 'dark' | 'projector';
@@ -37,6 +38,7 @@ function App() {
      {mode==='eleve'&&<section aria-labelledby="student-heading">
       <h2 id="student-heading" className="mode-heading">Espace Élève <span className="mode-status">Démonstration locale</span></h2>
       <p className="mode-intro">Découvrir une notion de NSI, lire un exemple Python et formuler une question sans données personnelles.</p>
+      <PythonLab/>
       <section className="answer"><div className="answer-heading">Fiche pédagogique — contenu statique, non généré par Albert</div><div className="answer-content"><h2>La boucle bornée en Python (<code>for</code>)</h2>
        <div className="answer-grid"><div className="lesson"><p className="lead">Une <strong>boucle bornée</strong> permet de répéter un bloc d'instructions en parcourant un itérable. Avec <code>range(5)</code>, cinq valeurs sont parcourues.</p><h3>1. Structure générale</h3><PythonExample/><p>La variable <code>i</code> reçoit successivement les valeurs de 0 à 4. L'instruction <code>print</code> affiche chacune de ces valeurs.</p><h3>2. Expérimentation</h3><p>Quelles valeurs sont parcourues par <code>range(2, 10, 2)</code> ?</p></div>
        <div><div className="example"><h3>Exemple Python</h3><PythonExample/><strong>Affichage :</strong><pre>{'0\n1\n2\n3\n4'}</pre></div><div className="example"><h3>Petit exercice</h3><p>Écrivez une boucle bornée pour afficher les nombres pairs de 2 à 10 inclus. Précisez les valeurs parcourues.</p></div></div></div>
