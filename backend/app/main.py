@@ -55,6 +55,11 @@ def get_albert_adapter() -> AlbertAdapter | None:
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest, adapter: AlbertAdapter | None = Depends(get_albert_adapter)):
+    # Legacy route is strictly mock-only: no injected provider can bypass the secure gate.
+    if payload.model_id != "microalbert-mock":
+        raise HTTPException(status_code=400, detail={
+            "code": "invalid_input", "message": "Modèle indisponible sur la route de démonstration"
+        })
     if payload.model_id != "microalbert-mock":
         if adapter is None:
             raise HTTPException(status_code=400, detail={
