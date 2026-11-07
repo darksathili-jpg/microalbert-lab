@@ -51,3 +51,10 @@ Aucune fusion ni publication.
 - Palette CSS spécifique pour thèmes clair/sombre/projecteur, contraste renforcé des titres, champs, panneaux et boutons sombres.
 - Limitation : seuls les exemples statiques affichés sont colorés ; ce n'est pas encore un éditeur Python ni un moteur de coloration générale.
 - Compilation, contrôle de contraste automatisé, test navigateur et recette humaine : NON EXÉCUTÉS. G2-R5 EN VÉRIFICATION.
+
+## G2-R6 — 2026-11-07
+- Onglets distincts : Élève (fiche Python), Enseignant (préparation et corrigé statiques), Audit (état technique et limites de preuve).
+- Un simulateur local commun est disponible dans chaque espace, avec le mode sélectionné transmis au backend. Réponse effacée lors du changement d'espace pour éviter une confusion de provenance.
+- Aucun éditeur, stockage, journal persistant, certification, connexion Albert API ou exécution Python n'est revendiqué.
+- Tests nécessaires : TypeScript build, trois onglets, changement d'onglet après requête, envoi dans chaque mode, modes clair/sombre/projecteur, responsive et contrôle du clavier.
+- Aucun test exécuté par l'assistant après cette modification ; statut EN VÉRIFICATION. Aucune fusion ni publication.
