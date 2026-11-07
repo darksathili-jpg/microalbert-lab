@@ -180,3 +180,25 @@
  background:#fff;
  color:#000;
 }
+
+/* G2-R6 — distinct role spaces, all three themes */
+.mode-heading{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:4px 0 8px;font-size:1.55rem;color:var(--ink)}
+.mode-status{font-size:.75rem;font-weight:700;padding:5px 9px;border:1px solid var(--edge);border-radius:999px;background:var(--soft);color:var(--ink)}
+.mode-intro{line-height:1.5;margin:0 0 16px}
+.role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.role-card{background:var(--panel);border:2px solid var(--edge);border-radius:16px;padding:16px;min-width:0}
+.role-card h3{margin:0 0 12px;font-size:1.2rem;color:var(--ink)}
+.role-card h4{margin-bottom:6px}
+.role-card dl{display:grid;grid-template-columns:minmax(115px,35%) minmax(0,1fr);gap:9px 12px;line-height:1.4}
+.role-card dt{font-weight:750}
+.role-card dd{margin:0;overflow-wrap:anywhere}
+.role-card pre{white-space:pre-wrap;overflow:auto;padding:12px;border:1px solid var(--code-border);border-radius:9px;background:var(--code-bg);color:var(--code-fg)}
+.mock-controls{margin-top:20px;border-top:2px solid var(--edge);padding-top:16px}
+.mock-controls>h2{margin:0 0 12px;font-size:1.3rem;color:var(--ink)}
+.app[data-theme=dark]{--panel:#343961;--ink:#fff;--soft:#454a79}
+.app[data-theme=dark] .mode-heading,.app[data-theme=dark] .mode-status,.app[data-theme=dark] .role-card,.app[data-theme=dark] .role-card h3,.app[data-theme=dark] .mock-controls>h2{color:#fff}
+.app[data-theme=dark] .role-card{background:#343961}
+.app[data-theme=projector]{--panel:#fff;--ink:#000;--soft:#fff}
+.app[data-theme=projector] .mode-heading,.app[data-theme=projector] .mode-status,.app[data-theme=projector] .role-card,.app[data-theme=projector] .role-card h3,.app[data-theme=projector] .mock-controls>h2{color:#000;background:#fff}
+@media(max-width:900px){.role-grid{grid-template-columns:1fr}}
+@media(max-width:440px){.role-card dl{grid-template-columns:1fr;gap:3px}.role-card dd{margin-bottom:10px}}
