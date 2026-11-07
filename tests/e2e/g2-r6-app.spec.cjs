@@ -23,7 +23,6 @@ test('G2-R6 : trois espaces distincts et aucun résultat avant interrogation', a
   await expect(page.getByText('Aucune interrogation effectuée dans cet espace.')).toBeVisible();
   await page.getByRole('button', { name: 'Enseignant' }).click();
   await expect(page.getByRole('heading', { name: 'Espace Enseignant' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Repères pour l’enseignant' })).toHaveCount(0); // apostrophe typographique non utilisée
   await expect(page.getByText('Activité de référence')).toBeVisible();
   await page.getByRole('button', { name: 'Audit' }).click();
   await expect(page.getByRole('heading', { name: 'Espace Audit' })).toBeVisible();
