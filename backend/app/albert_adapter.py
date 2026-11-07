@@ -86,6 +86,12 @@ class AlbertAdapter:
                         raise ProviderError("provider_auth_failed", 503)
                     if response.status_code == 429:
                         raise ProviderError("provider_rate_limited", 429)
+                    if response.status_code == 404:
+                        raise ProviderError("provider_model_not_found", 400)
+                    if response.status_code == 422:
+                        raise ProviderError("provider_invalid_request", 400)
+                    if response.status_code == 503:
+                        raise ProviderError("provider_busy", 503)
                     if response.status_code >= 500:
                         raise ProviderError("provider_unavailable", 502)
                     if response.status_code != 200:
