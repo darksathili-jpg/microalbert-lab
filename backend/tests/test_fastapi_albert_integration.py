@@ -69,6 +69,9 @@ def test_simulated_adapter_through_fastapi_for_all_modes(client, mode):
     (403, 503, "provider_auth_failed"),
     (429, 429, "provider_rate_limited"),
     (500, 502, "provider_unavailable"),
+    (503, 503, "provider_busy"),
+    (404, 400, "provider_model_not_found"),
+    (422, 400, "provider_invalid_request"),
 ])
 def test_error_mapping_and_no_sensitive_data(client, upstream, expected, code):
     app.dependency_overrides[get_albert_adapter] = lambda: make_adapter(
