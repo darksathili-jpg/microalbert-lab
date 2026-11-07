@@ -96,3 +96,87 @@
 @media(max-width:440px){
   .app[data-theme=projector] .logo::before{font-size:2.3rem}
 }
+
+/* G2-R5: semantic palette, explicit text contrast, syntax highlighting.
+   Keep every token legible in light, dark and projector themes. */
+.app {
+ --code-bg:#f3f5ff;--code-fg:#1d2555;--code-border:#a6afe2;
+ --py-keyword:#7134c6;--py-function:#0756a6;--py-number:#a4460b;
+}
+.app[data-theme=dark]{
+ --code-bg:#131a34;--code-fg:#f5f7ff;--code-border:#aab6e8;
+ --py-keyword:#d8a7ff;--py-function:#85d6ff;--py-number:#ffd18d;
+ --muted:#e4e7ff;
+}
+.app[data-theme=projector]{
+ --code-bg:#fff;--code-fg:#000;--code-border:#333;
+ --py-keyword:#000;--py-function:#000;--py-number:#000;
+}
+.app .python-code,
+.app .lesson pre,
+.app .example pre {
+ background:var(--code-bg);
+ color:var(--code-fg);
+ border:1px solid var(--code-border);
+}
+.app .python-code code,
+.app .python-code .py-keyword,
+.app .python-code .py-function,
+.app .python-code .py-number { background:transparent }
+.app .python-code .py-keyword {color:var(--py-keyword);font-weight:750}
+.app .python-code .py-function {color:var(--py-function);font-weight:700}
+.app .python-code .py-number {color:var(--py-number);font-weight:750}
+.app[data-theme=dark] .sheet,
+.app[data-theme=dark] .answer,
+.app[data-theme=dark] .answer-content,
+.app[data-theme=dark] .lesson,
+.app[data-theme=dark] .example,
+.app[data-theme=dark] .simulation-result {
+ color:#f6f7ff;
+}
+.app[data-theme=dark] .example h3,
+.app[data-theme=dark] .lesson h3,
+.app[data-theme=dark] .answer-content h2,
+.app[data-theme=dark] .simulation-result h2,
+.app[data-theme=dark] .answer-content strong,
+.app[data-theme=dark] .model-row label,
+.app[data-theme=dark] .model-row .hint,
+.app[data-theme=dark] .small {
+ color:#fff;
+}
+.app[data-theme=dark] .prompt,
+.app[data-theme=dark] .model-row select {
+ background:#161b36;
+ color:#fff;
+ border-color:#a7b3e9;
+}
+.app[data-theme=dark] .secondary {
+ background:#24294e;
+ color:#fff;
+ border-color:#b3b7ee;
+}
+.app[data-theme=dark] .warning {
+ background:#403521;
+ color:#fff;
+ border-left-color:#ffce65;
+}
+.app[data-theme=dark] .answer-heading {
+ background:#414778;
+ color:#fff;
+}
+.app[data-theme=dark] .tabs button:not([aria-pressed=true]){
+ background:#383e70;
+ color:#fff;
+ border-color:#a4abe6;
+}
+.app[data-theme=dark] .tabs button[aria-pressed=true]{
+ color:#fff;
+}
+.app[data-theme=projector] .python-code,
+.app[data-theme=projector] .python-code code,
+.app[data-theme=projector] .python-code .py-keyword,
+.app[data-theme=projector] .python-code .py-function,
+.app[data-theme=projector] .python-code .py-number {
+ background:#fff;
+ color:#000;
+}
