@@ -117,3 +117,55 @@ class AlbertAdapter:
             raise ProviderError("provider_timeout", 504) from None
         except httpx.RequestError:
             raise ProviderError("provider_unavailable", 502) from None
+
+    async def list_allowed_chat_models(self) -> list[str]:
+        """Discover only allowlisted text-generation models; transport injected."""
+        try:
+            async with httpx.AsyncClient(
+                transport=self._transport,
+                timeout=httpx.Timeout(self.config.timeout_seconds),
+                follow_redirects=False,
+                trust_env=False,
+            ) as client:
+                async with client.stream(
+                    "GET",
+                    self.config.base_url.rstrip("/") + "/v1/models",
+                    headers={"Authorization": f"Bearer {self._token}"},
+                ) as response:
+                    if response.status_code in (401, 403):
+                        raise ProviderError("provider_auth_failed", 503)
+                    if response.status_code == 429:
+                        raise ProviderError("provider_rate_limited", 429)
+                    if response.status_code == 503:
+                        raise ProviderError("provider_busy", 503)
+                    if response.status_code != 200:
+                        raise ProviderError("provider_unavailable", 502)
+                    body = bytearray()
+                    async for chunk in response.aiter_bytes():
+                        body.extend(chunk)
+                        if len(body) > MAX_RESPONSE_BYTES:
+                            raise ProviderError("provider_response_too_large", 502)
+                    try:
+                        payload = httpx.Response(200, content=bytes(body)).json()
+                        entries = payload["data"]
+                        if not isinstance(entries, list):
+                            raise ValueError("invalid_data")
+                        if len(entries) > 1000:
+                            raise ValueError("too_many_models")
+                        result = []
+                        for item in entries:
+                            if not isinstance(item, dict):
+                                raise ValueError("invalid_model")
+                            identifier = item.get("id")
+                            if not isinstance(identifier, str):
+                                raise ValueError("invalid_identifier")
+                            if (identifier in self.config.allowed_models
+                                    and item.get("type") == "text-generation"):
+                                result.append(identifier)
+                    except (KeyError, TypeError, ValueError):
+                        raise ProviderError("provider_invalid_response", 502) from None
+                    return sorted(set(result))
+        except httpx.TimeoutException:
+            raise ProviderError("provider_timeout", 504) from None
+        except httpx.RequestError:
+            raise ProviderError("provider_unavailable", 502) from None
