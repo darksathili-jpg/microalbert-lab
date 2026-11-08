@@ -9,7 +9,7 @@ test('G4-P6-B : mission Balises et exemples disponibles',async({page})=>{
  await expect(page.getByRole('heading',{name:'Mission Terminale NSI · Balises lumineuses'})).toBeVisible();
  await expect(page.locator('#balises-code')).toBeVisible();
  await page.getByRole('group',{name:'Outils Balises lumineuses'}).getByRole('button',{name:'Mes tests'}).click();
- await expect(page.getByText('regrouper([])',{exact:false})).toBeVisible();
+ await expect(page.locator('.lab-examples').filter({hasText:'print(regrouper([]))'}).first()).toBeVisible();
 });
 test('G4-P6-B : indices gradués et absence de corrigé',async({page})=>{
  await page.getByRole('group',{name:'Choisir une mission'}).getByRole('button',{name:'Balises lumineuses'}).click();
