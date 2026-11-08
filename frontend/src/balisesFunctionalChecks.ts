@@ -17,7 +17,7 @@ export function buildBalisesChecks(source:string):string {
  '    try:\n'+
  '        _microalbert_before = list(_microalbert_arg)\n'+
  '        _microalbert_actual = regrouper(_microalbert_arg)\n'+
- '        _microalbert_ok = type(_microalbert_actual) is list and _microalbert_actual == _microalbert_expected and _microalbert_arg == _microalbert_before\n'+
+ '        _microalbert_ok = type(_microalbert_actual) is list and all(type(_microalbert_pair) is tuple and len(_microalbert_pair) == 2 and type(_microalbert_pair[1]) is int and _microalbert_pair[1] > 0 for _microalbert_pair in _microalbert_actual) and _microalbert_actual == _microalbert_expected and _microalbert_arg == _microalbert_before\n'+
  '        _microalbert_results.append(dict(id=_microalbert_id,ok=_microalbert_ok,actual=repr(_microalbert_actual),unchanged=_microalbert_arg == _microalbert_before))\n'+
  '    except Exception as _microalbert_error:\n'+
  '        _microalbert_results.append(dict(id=_microalbert_id,ok=False,actual=type(_microalbert_error).__name__,unchanged=False))\n'+
