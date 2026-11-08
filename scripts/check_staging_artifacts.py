@@ -16,7 +16,10 @@ def require(path, description):
 
 require(DIST / "index.html", "page d'entrée Vite")
 require(DIST / "pyodide" / "pyodide.js", "moteur Python local")
-require(DIST / "python-runtime.worker.js", "Web Worker Python")
+# Vite produit un nom d'asset potentiellement haché pour le Web Worker.
+worker_assets = list(DIST.rglob('*python-runtime.worker*.js')) if DIST.exists() else []
+if not worker_assets:
+    errors.append('ABSENT : Web Worker Python construit (asset Vite)')
 
 if DIST.exists():
     forbidden_names = {".env", ".env.local", ".env.production", "id_rsa", "id_ed25519"}
