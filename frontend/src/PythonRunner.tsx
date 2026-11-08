@@ -1,10 +1,10 @@
 import React, {useEffect,useRef,useState} from 'react';
 import './PythonRunner.css';
-import {guideExecution, type PedagogicalGuidance} from './pedagogicalFeedback';
+import {guideExecution, type PedagogicalGuidance, type MissionContext} from './pedagogicalFeedback';
 type Line={stream:'stdout'|'stderr';text:string};
 type Result={type:'result';id:number;output:Line[];truncated?:boolean;success:boolean;error?:string};
 const TIMEOUT_MS=8000;
-export default function PythonRunner({source}:{source:string}){
+export default function PythonRunner({source,mission='file'}:{source:string;mission?:MissionContext}){
  const [state,setState]=useState<'idle'|'running'|'success'|'error'|'stopped'|'timeout'>('idle');
  const [lines,setLines]=useState<Line[]>([]);
  const [error,setError]=useState('');
@@ -18,7 +18,7 @@ export default function PythonRunner({source}:{source:string}){
  }
  useEffect(()=>()=>{generation.current++;clear();},[]);
  function stop(reason:'stopped'|'timeout'){
-  generation.current++;clear();setState(reason);setGuidance(guideExecution(reason));setError(reason==='timeout'?'Exécution interrompue : délai de 8 secondes dépassé.':'Exécution arrêtée par l’élève.');
+  generation.current++;clear();setState(reason);setGuidance(guideExecution(reason,'',mission));setError(reason==='timeout'?'Exécution interrompue : délai de 8 secondes dépassé.':'Exécution arrêtée par l’élève.');
  }
  function run(){
   generation.current++;clear();const id=generation.current;
@@ -31,9 +31,9 @@ export default function PythonRunner({source}:{source:string}){
     clear();setLines(event.data.output||[]);
     setError([event.data.error,event.data.truncated?'Sortie tronquée à 16 000 caractères.':undefined].filter(Boolean).join('\n'));
     setState(event.data.success?'success':'error');
-    setGuidance(guideExecution(event.data.success?'success':'error',event.data.error||''));
+    setGuidance(guideExecution(event.data.success?'success':'error',event.data.error||'',mission));
    };
-   current.onerror=()=>{if(id!==generation.current)return;clear();setError('Erreur du moteur Python local. Vérifier les ressources Pyodide.');setGuidance(guideExecution('engine-error'));setState('error');};
+   current.onerror=()=>{if(id!==generation.current)return;clear();setError('Erreur du moteur Python local. Vérifier les ressources Pyodide.');setGuidance(guideExecution('engine-error','',mission));setState('error');};
    timer.current=setTimeout(()=>{if(id===generation.current)stop('timeout');},TIMEOUT_MS);
    current.postMessage({type:'run',id,source});
   }catch(e){clear();setError('Impossible de démarrer le moteur Python : '+String(e));setGuidance(guideExecution('engine-error'));setState('error');}
