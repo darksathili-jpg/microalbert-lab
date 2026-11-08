@@ -54,6 +54,7 @@ test('GE-02 and GE-05: focus and theme switch', async ({ page }) => {
 for (const theme of ['light','dark','projector']) {
   for (const [width,height] of [[1536,1024],[1366,768],[390,844]]) {
     test('capture '+theme+' '+width+'x'+height, async ({page}) => {
+      test.setTimeout(60000); // Captures pleine page sur navigateur mobile : délai distinct des assertions fonctionnelles.
       await page.setViewportSize({width,height});
       await page.locator('#theme').selectOption(theme);
       await page.screenshot({path:'artifacts/guide-'+theme+'-'+width+'x'+height+'.png',fullPage:true});
