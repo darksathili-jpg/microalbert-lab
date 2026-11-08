@@ -16,5 +16,7 @@ test('G4-P6-C : erreur Python conduit à une question et non à un corrigé',asy
  await page.getByRole('button',{name:'Exécuter le code'}).click();
  await expect(page.getByText('Exécution en erreur',{exact:true})).toBeVisible({timeout:30000});
  await expect(page.locator('.python-runner-output')).toContainText('IndexError');
- await expect(page.getByRole('complementary',{name:'Retour pédagogique après exécution'})).toContainText('Ton programme traite-t-il ce cas ?');
+ const guidance=page.getByRole('complementary',{name:'Retour pédagogique après exécution'});
+ await expect(guidance).toContainText('liste des états est vide');
+ await expect(guidance).not.toContainText('file est vide');
 });
