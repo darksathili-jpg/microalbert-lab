@@ -40,7 +40,7 @@ export default function PythonRunner({source}:{source:string}){
  }
  return <section className="python-runner" aria-labelledby="python-runner-title">
   <h3 id="python-runner-title">Exécution Python locale</h3>
-  <p>Le programme s’exécute dans un processus de navigateur distinct (Web Worker). Ce mécanisme ne constitue pas un bac à sable pour du code hostile. Délai maximal : 8 secondes, chargement initial compris.</p>
+  <p>Le programme s’exécute dans un fil d’exécution distinct du navigateur (Web Worker). Ce mécanisme ne constitue pas un bac à sable pour du code hostile. Délai maximal : 8 secondes, chargement initial compris.</p>
   <div className="python-runner-actions">
    <button type="button" onClick={run} disabled={state==='running'}>Exécuter le code</button>
    <button type="button" onClick={()=>stop('stopped')} disabled={state!=='running'}>Arrêter l’exécution</button>
