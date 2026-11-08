@@ -66,5 +66,59 @@ class TestBalises(unittest.TestCase):
                                     for c in resultat))
 
 
+def mutation_oublie_derniere_plage(etats):
+    """Mutation : omet d'enregistrer la dernière plage."""
+    if not etats:
+        return []
+    resultat = []
+    courant, effectif = etats[0], 1
+    for etat in etats[1:]:
+        if etat == courant:
+            effectif += 1
+        else:
+            resultat.append((courant, effectif))
+            courant, effectif = etat, 1
+    return resultat
+
+
+def mutation_modifie_entree(etats):
+    """Mutation : calcule une sortie plausible mais vide la liste reçue."""
+    resultat = regrouper_reference(etats)
+    etats.clear()
+    return resultat
+
+
+def verifier_cas(fonction, entree, attendu):
+    """Vérifie simultanément résultat, type et non-modification de l'entrée."""
+    donnees = entree.copy()
+    obtenu = fonction(donnees)
+    return (type(obtenu) is list
+            and obtenu == attendu
+            and donnees == entree
+            and all(type(couple) is tuple and len(couple) == 2
+                    and type(couple[1]) is int and couple[1] > 0
+                    for couple in obtenu))
+
+
+def cas_qui_rejettent(fonction):
+    """Liste des cas qui détectent une mutation, sans exécuter de code élève."""
+    return [nom for nom, entree, attendu in CAS
+            if not verifier_cas(fonction, entree, attendu)]
+
+
+class TestMutationsSupplementaires(unittest.TestCase):
+    def test_oracle_reference_accepte_tous_les_cas(self):
+        self.assertEqual(cas_qui_rejettent(regrouper_reference), [])
+
+    def test_mutation_regroupement_non_consecutif_rejetee(self):
+        self.assertIn('alternance', cas_qui_rejettent(regrouper_mutation))
+
+    def test_mutation_derniere_plage_rejetee(self):
+        self.assertIn('singleton', cas_qui_rejettent(mutation_oublie_derniere_plage))
+
+    def test_mutation_entree_modifiee_rejetee(self):
+        self.assertIn('plages', cas_qui_rejettent(mutation_modifie_entree))
+
+
 if __name__ == "__main__":
     unittest.main()
