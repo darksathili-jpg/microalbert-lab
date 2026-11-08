@@ -20,26 +20,30 @@ test.beforeEach(async ({ page }) => {
 
 test('G2-R6 : trois espaces distincts et aucun résultat avant interrogation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Espace Élève' })).toBeVisible();
-  await expect(page.getByText('Aucune interrogation effectuée dans cet espace.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Interroger le simulateur' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Enseignant' }).click();
   await expect(page.getByRole('heading', { name: 'Espace Enseignant' })).toBeVisible();
   await expect(page.getByText('Activité de référence')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Interroger le simulateur' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Audit' }).click();
   await expect(page.getByRole('heading', { name: 'Espace Audit' })).toBeVisible();
   await expect(page.getByText('Limites de la preuve')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Interroger le simulateur' })).toBeVisible();
   await expect(page.getByText('Activité de référence')).toHaveCount(0);
 });
 
-test('G2-R6 : le mode de requête suit l’onglet et la réponse ne fuit pas', async ({ page }) => {
+test('G4-P6-G : simulateur réservé à Audit et réponse masquée dans les autres espaces', async ({ page }) => {
   await page.getByRole('button', { name: 'Audit' }).click();
   await page.getByRole('button', { name: 'Interroger le simulateur' }).click();
   await expect(page.getByText('Réponse locale simulée pour audit')).toBeVisible();
   await expect(page.getByText(/Mode envoyé : audit/)).toBeVisible();
   await page.getByRole('button', { name: 'Élève' }).click();
   await expect(page.getByText('Réponse locale simulée pour audit')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Interroger le simulateur' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Enseignant' }).click();
+  await expect(page.getByRole('button', { name: 'Interroger le simulateur' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Audit' }).click();
   await expect(page.getByText('Aucune interrogation effectuée dans cet espace.')).toBeVisible();
-  await page.getByRole('button', { name: 'Interroger le simulateur' }).click();
-  await expect(page.getByText('Réponse locale simulée pour eleve')).toBeVisible();
 });
 
 test('G2-R6 : trois thèmes et aucune surface sombre dans les panneaux projecteur', async ({ page }) => {
@@ -49,7 +53,8 @@ test('G2-R6 : trois thèmes et aucune surface sombre dans les panneaux projecteu
     await expect(page.locator('.app')).toHaveAttribute('data-theme', value);
   }
   await expect(page.locator('.logo .brand-icon')).toBeHidden();
-  for (const selector of ['.sheet', '.answer', '.simulation-result', '.topbar']) {
+  await page.getByRole('button', { name: 'Audit' }).click();
+  for (const selector of ['.sheet', '.simulation-result', '.topbar']) {
     const bg = await page.locator(selector).first().evaluate(el => getComputedStyle(el).backgroundColor);
     // A white/transparent surface is required; no dark backgrounds.
     expect(['rgb(255, 255, 255)', 'rgba(0, 0, 0, 0)']).toContain(bg);
