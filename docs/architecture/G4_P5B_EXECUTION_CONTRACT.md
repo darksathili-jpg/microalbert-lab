@@ -30,3 +30,31 @@ Si le runtime Python ne peut pas être empaqueté localement, ou si les risques 
 
 ## Preuves attendues
 Journal de compilation, rapport Playwright (Edge autorisé par configuration explicite), traces des tests timeout/annulation et captures des trois thèmes. Les tests ne sont pas réputés réussis sans exécution réelle.
+
+
+## État d'implémentation initiale — 2026-11-08
+Les fichiers suivants ont été ajoutés : `frontend/src/python-runtime.worker.js`, `frontend/src/PythonRunner.tsx`, `frontend/src/PythonRunner.css`, `frontend/scripts/copy-pyodide.mjs`, `tests/e2e/g4-p5b-python-runtime.spec.cjs`. `PythonLab.tsx` et `frontend/package.json` ont été modifiés.
+
+**Aucune compilation ni exécution de tests n'a été réalisée dans cette session.** Le statut demeure **EN VÉRIFICATION**.
+
+### Installation et recette locale
+À la racine du dépôt, sur la branche dédiée :
+```powershell
+npm.cmd --prefix frontend install
+npm.cmd --prefix frontend run build
+npm.cmd --prefix frontend run dev -- --strictPort
+```
+Dans un second terminal :
+```powershell
+npx.cmd playwright test g4-p5b-python-runtime.spec.cjs --config=playwright.edge.config.cjs --reporter=list --workers=1
+```
+La configuration Edge temporaire doit déjà exister localement. Si elle n'existe pas, la créer explicitement ; ne pas dépendre d'une installation Chromium bloquée.
+
+### Risques et critères non encore couverts
+- L'installation NPM doit créer ou actualiser le fichier de verrouillage `frontend/package-lock.json` ; ne pas déclarer reproductible une installation sans vérification du verrouillage.
+- Le Worker n'empêche pas intrinsèquement l'accès réseau. **Ne pas présenter cette version comme un environnement sûr pour du code Python non fiable.**
+- L'exécution asynchrone Python peut demander des modules ou ressources supplémentaires ; vérifier l'absence de téléchargements externes et la politique de sécurité des contenus.
+- Le délai de 8 s inclut l'initialisation du moteur : sur une machine lente, même `print(5)` peut expirer. Mesurer les performances avant la recette.
+- La mémoire du Worker n'est pas plafonnée ; aucune garantie contre une consommation excessive.
+- Tester séparément la réinitialisation de l'état, la troncature des sorties, les erreurs de syntaxe, le zoom, les thèmes et l'absence d'appel à Albert API.
+- En cas d'échec du build ou d'un test : **BLOQUÉ** ; ne pas fusionner ni déployer.
