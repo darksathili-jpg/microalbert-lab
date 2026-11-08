@@ -4,6 +4,8 @@ import './style.css';
 import PythonLab from './PythonLab';
 
 type Mode = 'eleve' | 'enseignant' | 'audit';
+// Build pilote : aucun espace Enseignant/Audit ni appel au simulateur dans l'interface.
+const STUDENT_STAGING = import.meta.env.VITE_STUDENT_STAGING === 'true';
 type Theme = 'light' | 'dark' | 'projector';
 type Reply = { reply: string; model_id: string; finish_reason: string | null; request_id: string; warnings: string[] };
 function PythonExample() {
@@ -33,10 +35,10 @@ function App() {
  return <div className="app" data-theme={theme}>
   <header className="topbar"><div className="logo">{logoReady?<img className="brand-icon" src="/microalbert-reference-logo.png" alt="" onError={()=>setLogoReady(false)}/>:<span className="atom" aria-hidden="true">⚛</span>}<div><div className="logo-title">Micro<span className="yellow">Albert</span> <span className="orange">Lab</span></div><div className="logo-sub">Laboratoire pédagogique local · Première et Terminale · Expérimentation non certifiée</div></div></div><div className="edition">Albert NSI · V0.1</div><label>Affichage : <select value={theme} onChange={e=>setTheme(e.target.value as Theme)}><option value="light">Clair</option><option value="dark">Sombre</option><option value="projector">Vidéoprojecteur</option></select></label></header>
   <div className="stage"><aside className="mascot-panel" aria-label="Illustration de MicroAlbert">{mascotReady?<img src="/microalbert-reference-left.png" alt="MicroAlbert au tableau, avec son ordinateur et des livres de NSI" onError={()=>setMascotReady(false)}/>:<div className="mascot-fallback">Illustration MicroAlbert à installer dans frontend/public/microalbert-reference-left.png</div>}</aside>
-   <main className="workspace"><div className="tabs" role="group" aria-label="Mode de travail">{(['eleve','enseignant','audit'] as const).map(m=><button key={m} type="button" aria-pressed={mode===m} onClick={()=>{setMode(m);setReply(null);setError('');}}>{m==='eleve'?'Élève':m==='enseignant'?'Enseignant':'Audit'}</button>)}</div>
+   <main className="workspace">{!STUDENT_STAGING&&<div className="tabs" role="group" aria-label="Mode de travail">{(['eleve','enseignant','audit'] as const).map(m=><button key={m} type="button" aria-pressed={mode===m} onClick={()=>{setMode(m);setReply(null);setError('');}}>{m==='eleve'?'Élève':m==='enseignant'?'Enseignant' :'Audit'}</button>)}</div>}
     <section className="sheet">
      {mode==='eleve'&&<section aria-labelledby="student-heading">
-      <h2 id="student-heading" className="mode-heading">Espace Élève <span className="mode-status">Démonstration locale</span></h2>
+      <h2 id="student-heading" className="mode-heading">Espace Élève <span className="mode-status">{STUDENT_STAGING?'Pilote élèves — non certifié':'Démonstration locale'}</span></h2>
       <p className="mode-intro">Découvrir une notion de NSI, lire un exemple Python et formuler une question sans données personnelles.</p>
       <PythonLab/>
       <section className="answer"><div className="answer-heading">Fiche pédagogique — contenu statique, non généré par Albert</div><div className="answer-content"><h2>La boucle bornée en Python (<code>for</code>)</h2>
@@ -45,7 +47,7 @@ function App() {
        <p className="warning">La fiche est un exemple statique ; aucune correction automatique ni exécution Python n'est activée.</p>
       </div></section>
      </section>}
-     {mode==='enseignant'&&<section aria-labelledby="teacher-heading">
+     {!STUDENT_STAGING&&mode==='enseignant'&&<section aria-labelledby="teacher-heading">
       <h2 id="teacher-heading" className="mode-heading">Espace Enseignant <span className="mode-status">Préparation — prototype</span></h2>
       <p className="mode-intro">Prévisualiser une activité et son cadre pédagogique. L'édition, la sauvegarde et la publication d'activités ne sont pas encore disponibles.</p>
       <div className="role-grid">
@@ -53,7 +55,7 @@ function App() {
        <section className="role-card"><h3>Repères pour l'enseignant</h3><p><strong>Résultat attendu :</strong> 2, 4, 6, 8, 10.</p><pre className="python-code"><code><span className="py-keyword">for</span>{' nombre '}<span className="py-keyword">in</span>{' '}<span className="py-function">range</span>{'('}<span className="py-number">2</span>{', '}<span className="py-number">11</span>{', '}<span className="py-number">2</span>{'):'}{'\n    '}<span className="py-function">print</span>{'(nombre)'}</code></pre><p className="small">Exemple de correction statique à vérifier avant utilisation en classe.</p></section>
       </div>
      </section>}
-     {mode==='audit'&&<section aria-labelledby="audit-heading">
+     {!STUDENT_STAGING&&mode==='audit'&&<section aria-labelledby="audit-heading">
       <h2 id="audit-heading" className="mode-heading">Espace Audit <span className="mode-status">Diagnostic local — prototype</span></h2>
       <p className="mode-intro">Consulter les capacités actuellement implémentées. Aucun journal persistant ni preuve certifiée n'est disponible.</p>
       <div className="role-grid">
@@ -61,7 +63,7 @@ function App() {
        <section className="role-card"><h3>Limites de la preuve</h3><p>Les informations présentées décrivent le prototype. Elles ne constituent ni un audit de sécurité ni une attestation de conformité.</p><p className="warning">N'utilisez aucune donnée personnelle d'élève pour les essais.</p></section>
       </div>
      </section>}
-     {mode==='audit'&&<section className="mock-controls" aria-labelledby="mock-heading">
+     {!STUDENT_STAGING&&mode==='audit'&&<section className="mock-controls" aria-labelledby="mock-heading">
       <h2 id="mock-heading">Vérifier le contrat de réponse simulé</h2>
       <div className="model-row"><label htmlFor="model">Modèle</label><select id="model" value="microalbert-mock" disabled><option value="microalbert-mock">microalbert-mock (G1)</option></select><span className="hint">Les modèles réels ne sont pas activés. Aucune requête Albert API.</span></div>
       <label htmlFor="prompt" className="small">Message fictif de démonstration</label>
