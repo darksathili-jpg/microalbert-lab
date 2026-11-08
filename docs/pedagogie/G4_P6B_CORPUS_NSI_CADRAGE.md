@@ -22,3 +22,11 @@ Les situations d'évaluation 2026 sont conçues pour la certification : ne pas l
 G0 sources vérifiées ; G1 conception validée ; G2 implémentation ; G3 tests automatisés ; G4 recette humaine ; G5 publication (INTERDITE sans nouvelle autorisation).
 
 Interdictions : fusion dans main, déploiement, publication de site, appel réel à l'API Albert, exposition de secrets. Cette branche distante de travail n'est pas un déploiement.
+
+## Ressource pédagogique complémentaire fournie par l'enseignant
+- Portail de révision : https://darksathili-jpg.github.io/pratique_2026/ (23 fiches de révision liées aux sujets pratiques 2026).
+- Fiche sujet 01, codage RLE : https://darksathili-jpg.github.io/pratique_2026/sujet_1/fiche_rle_nsi_light.html — parcours de liste, codage/décodage, contre-exemples, limites de 255, tests d'aller-retour. RLE = Run-Length Encoding, codage par plages.
+- Fiche sujet 15, cabinet vétérinaire : https://darksathili-jpg.github.io/pratique_2026/sujet_15/fiche_veto_nsi_light.html — chaînes, SQL, SQLite, dictionnaires, jeux de tests et débogage.
+- Fiche sujet 21, cartes mémoire : https://darksathili-jpg.github.io/pratique_2026/sujet_21/fiche_cartes_leitner.html — programmation orientée objet et dictionnaires (à détailler après lecture intégrale).
+
+Cette ressource constitue un **support de progression et d'analyse didactique**, pas une preuve indépendante du contenu réglementaire des sujets officiels. Confronter systématiquement chaque fiche à la banque nationale et tracer toute adaptation. Ne pas recopier les corrections dans l'espace élève : conserver des indices gradués et des tests observables. Les exemples du site peuvent être analysés, mais les activités MicroAlbert doivent être originales.
