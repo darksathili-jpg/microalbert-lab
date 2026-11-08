@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './PythonLab.css';
 import PythonEditor from './PythonEditor';
 import PythonRunner from './PythonRunner';
+import BalisesMission from './BalisesMission';
 
 const initial = `def enfiler(file, valeur):
     # Ajouter une valeur à la fin de la file
@@ -21,6 +22,7 @@ const stages = [
 ] as const;
 
 export default function PythonLab() {
+ const [mission, setMission] = useState<'file'|'balises'>('file');
  const [source, setSource] = useState(initial);
  const [step, setStep] = useState(0);
  const [feedback, setFeedback] = useState('Écris personnellement les fonctions puis propose des tests.');
@@ -43,6 +45,8 @@ export default function PythonLab() {
   setFeedback(hints[hintCount]);setHintCount(n=>n+1);
  }
  return <section className="python-lab" aria-labelledby="lab-heading">
+  <div className="lab-tabs" role="group" aria-label="Choisir une mission"><button type="button" aria-pressed={mission==='file'} onClick={()=>setMission('file')}>File de messages</button><button type="button" aria-pressed={mission==='balises'} onClick={()=>setMission('balises')}>Balises lumineuses</button></div>
+  {mission==='balises'?<BalisesMission/>:<>
   <h2 id="lab-heading">Mission Terminale NSI · Une file de messages</h2>
   <p>Objectif : implémenter une file représentée par une liste Python. Tu écris le code ; le tuteur questionne ta démarche sans livrer le corrigé.</p>
   <nav className="lab-steps" aria-label="Étapes de la mission">{stages.map((s,i)=><button key={s.name} type="button" aria-current={step===i?'step':undefined} onClick={()=>setStep(i)}>{i+1}. {s.name}</button>)}</nav>
@@ -51,5 +55,6 @@ export default function PythonLab() {
   {view==='code'?<><label htmlFor="lab-code">Éditeur Python — ton programme</label><PythonEditor id="lab-code" value={source} onChange={setSource} describedBy="lab-execution-note"/><p id="lab-execution-note" className="lab-notice">Éditeur local avec exécution Python séparée. Le contrôle de structure ci-dessous reste uniquement textuel.</p><PythonRunner source={source}/><div className="lab-actions"><button type="button" onClick={inspect}>Vérifier la structure (sans exécuter)</button><button type="button" onClick={hint} disabled={hintCount>=3}>Demander un indice ({3-hintCount} restants)</button></div></>:<><p>Prépare les appels et les résultats attendus avant de les exécuter dans le moteur Python local.</p><pre className="lab-examples">{'f = []\nenfiler(f, 7)\nenfiler(f, 4)\nprint(f)  # attendu : [7, 4]\nprint(defiler(f))  # attendu : 7\nprint(defiler([])) # attendu : None'}</pre><label htmlFor="lab-notes">Mes observations et justifications</label><textarea id="lab-notes" className="lab-notes" value={testNotes} onChange={e=>setTestNotes(e.target.value)} placeholder="Décris tes tests, les valeurs attendues et ce que tu dois vérifier." /></>}
   <p className="lab-feedback" role="status">{feedback}</p>
   <p className="lab-notice">Prototype pédagogique local : aucun code envoyé à Albert API, aucun corrigé automatique, aucune sauvegarde des travaux.</p>
+ </>}
  </section>;
 }
