@@ -3,7 +3,7 @@ test.beforeEach(async({page})=>{await page.goto('http://127.0.0.1:5173/');});
 test('G4-P5-B : sortie Python locale',async({page})=>{
  await page.locator('#lab-code').fill('print(2 + 3)');
  await page.getByRole('button',{name:'Exécuter le code'}).click();
- await expect(page.getByText('Exécution terminée')).toBeVisible({timeout:30000});
+ await expect(page.getByText('Exécution terminée', {exact:true})).toBeVisible({timeout:30000});
  await expect(page.locator('.python-runner-output')).toContainText('5');
 });
 test('G4-P5-B : erreur Python explicite',async({page})=>{
@@ -18,7 +18,7 @@ test('G4-P5-B : boucle infinie arrêtée au délai et relance possible',async({p
  await expect(page.getByText('Délai dépassé')).toBeVisible({timeout:15000});
  await page.locator('#lab-code').fill('print(9)');
  await page.getByRole('button',{name:'Exécuter le code'}).click();
- await expect(page.getByText('Exécution terminée')).toBeVisible({timeout:30000});
+ await expect(page.getByText('Exécution terminée', {exact:true})).toBeVisible({timeout:30000});
  await expect(page.locator('.python-runner-output')).toContainText('9');
 });
 test('G4-P5-B : annulation ne publie pas de sortie tardive',async({page})=>{
