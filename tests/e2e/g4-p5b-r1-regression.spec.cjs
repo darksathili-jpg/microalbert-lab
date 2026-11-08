@@ -9,7 +9,7 @@ async function execute(page, source) {
 }
 test('R1 : interpreter reset between executions', async ({page}) => {
   await execute(page, 'secret_de_test = 42\nprint(secret_de_test)');
-  await expect(page.getByText('Exécution terminée')).toBeVisible({timeout:30000});
+  await expect(page.getByText('Exécution terminée', {exact:true})).toBeVisible({timeout:30000});
   await expect(page.locator('.python-runner-output')).toContainText('42');
   await execute(page, 'print(secret_de_test)');
   await expect(page.getByText('Exécution en erreur')).toBeVisible({timeout:30000});
@@ -22,7 +22,7 @@ test('R1 : syntax errors remain visible', async ({page}) => {
 });
 test('R1 : stdout is truncated', async ({page}) => {
   await execute(page, 'print("x" * 25000)');
-  await expect(page.getByText('Exécution terminée')).toBeVisible({timeout:30000});
+  await expect(page.getByText('Exécution terminée', {exact:true})).toBeVisible({timeout:30000});
   await expect(page.locator('.python-runner-output')).toContainText('Sortie tronquée');
 });
 test('R1 : no Albert or external requests during simple Python execution', async ({page}) => {
@@ -33,6 +33,6 @@ test('R1 : no Albert or external requests during simple Python execution', async
     if (/albert/i.test(url.pathname) && /\/api\//.test(url.pathname)) external.push(request.url());
   });
   await execute(page, 'print(7)');
-  await expect(page.getByText('Exécution terminée')).toBeVisible({timeout:30000});
+  await expect(page.getByText('Exécution terminée', {exact:true})).toBeVisible({timeout:30000});
   expect(external).toEqual([]);
 });
