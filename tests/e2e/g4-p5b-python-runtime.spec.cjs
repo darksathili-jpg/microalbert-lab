@@ -13,6 +13,8 @@ test('G4-P5-B : erreur Python explicite',async({page})=>{
  await expect(page.locator('.python-runner-output')).toContainText('ZeroDivisionError');
 });
 test('G4-P5-B : boucle infinie arrêtée au délai et relance possible',async({page})=>{
+ // Deux démarrages de Pyodide et un délai Python de 8 s : le budget global de 15 s est insuffisant.
+ test.setTimeout(45000);
  await page.locator('#lab-code').fill('while True:\n    pass');
  await page.getByRole('button',{name:'Exécuter le code'}).click();
  await expect(page.getByText('Délai dépassé')).toBeVisible({timeout:15000});
