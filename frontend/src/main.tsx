@@ -61,8 +61,8 @@ function App() {
        <section className="role-card"><h3>Limites de la preuve</h3><p>Les informations présentées décrivent le prototype. Elles ne constituent ni un audit de sécurité ni une attestation de conformité.</p><p className="warning">N'utilisez aucune donnée personnelle d'élève pour les essais.</p></section>
       </div>
      </section>}
-     <section className="mock-controls" aria-labelledby="mock-heading">
-      <h2 id="mock-heading">{mode==='eleve'?'Poser une question au simulateur':mode==='enseignant'?'Tester une consigne fictive':"Vérifier le contrat de réponse simulé"}</h2>
+     {mode==='audit'&&<section className="mock-controls" aria-labelledby="mock-heading">
+      <h2 id="mock-heading">Vérifier le contrat de réponse simulé</h2>
       <div className="model-row"><label htmlFor="model">Modèle</label><select id="model" value="microalbert-mock" disabled><option value="microalbert-mock">microalbert-mock (G1)</option></select><span className="hint">Les modèles réels ne sont pas activés. Aucune requête Albert API.</span></div>
       <label htmlFor="prompt" className="small">Message fictif de démonstration</label>
       <textarea className="prompt" id="prompt" maxLength={4000} value={message} onChange={e=>setMessage(e.target.value)}/>
@@ -73,7 +73,7 @@ function App() {
        {error&&<p role="alert">{error}</p>}
        {reply&&<div><p>{reply.reply}</p><p className="small">Mode envoyé : {lastRequestMode??'non précisé'} · Modèle : {reply.model_id} · Requête : {reply.request_id} · Fin : {reply.finish_reason??'non précisée'}</p><p className="warning">Simulation technique uniquement : aucune réponse pédagogique générée par Albert API.</p></div>}
       </section>
-     </section>
+     </section>}
     </section></main></div><footer>Prototype G2 — référence de composition, fidélité en cours de vérification · Aucune donnée personnelle d'élève</footer>
  </div>;
 }
