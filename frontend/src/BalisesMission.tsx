@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import PythonEditor from './PythonEditor';
 import PythonRunner from './PythonRunner';
+import BalisesTestPlanner from './BalisesTestPlanner';
 
 const starter = `def regrouper(etats):
     # Compléter les instructions nécessaires.
@@ -48,7 +49,7 @@ export default function BalisesMission(){
   <nav className="lab-steps" aria-label="Étapes de la mission Balises lumineuses">{['Découverte','Recherche','Implémentation','Vérification','Bilan'].map((name,i)=><button type="button" key={name} aria-current={stage===i?'step':undefined} onClick={()=>setStage(i)}>{i+1}. {name}</button>)}</nav>
   <p className="lab-question"><strong>Question du tuteur :</strong> {questions[stage]}</p>
   <div className="lab-tabs" role="group" aria-label="Outils Balises lumineuses"><button type="button" aria-pressed={tab==='code'} onClick={()=>setTab('code')}>Code Python</button><button type="button" aria-pressed={tab==='tests'} onClick={()=>setTab('tests')}>Mes tests</button></div>
-  {tab==='code'?<><label htmlFor="balises-code">Éditeur Python — ton programme</label><PythonEditor id="balises-code" value={source} onChange={setSource}/><PythonRunner source={source}/><div className="lab-actions"><button type="button" onClick={inspect}>Vérifier la structure (sans exécuter)</button><button type="button" disabled={hintIndex>=3} onClick={requestHint}>Demander un indice ({3-hintIndex} restants)</button></div></>:<><p>Prévois les résultats avant de les exécuter. Ajoute les appels à la fin de ton programme dans l’onglet Code Python.</p><pre className="lab-examples">{examples}</pre><label htmlFor="balises-notes">Mes observations et justifications</label><textarea id="balises-notes" className="lab-notes" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Note un cas limite, une hypothèse et le résultat observé."/></>}
+  {tab==='code'?<><label htmlFor="balises-code">Éditeur Python — ton programme</label><PythonEditor id="balises-code" value={source} onChange={setSource}/><PythonRunner source={source}/><div className="lab-actions"><button type="button" onClick={inspect}>Vérifier la structure (sans exécuter)</button><button type="button" disabled={hintIndex>=3} onClick={requestHint}>Demander un indice ({3-hintIndex} restants)</button></div></>:<><p>Prévois les résultats avant de les exécuter. Ajoute les appels à la fin de ton programme dans l’onglet Code Python.</p><pre className="lab-examples">{examples}</pre><BalisesTestPlanner/><label htmlFor="balises-notes">Mes observations et justifications</label><textarea id="balises-notes" className="lab-notes" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Note un cas limite, une hypothèse et le résultat observé."/></>}
   <p className="lab-feedback" role="status">{feedback}</p>
   <p className="lab-notice">Une exécution sans exception ne certifie pas la correction de la fonction. Aucun code n’est transmis à l’API Albert ; aucune sauvegarde des travaux.</p>
  </section>;
