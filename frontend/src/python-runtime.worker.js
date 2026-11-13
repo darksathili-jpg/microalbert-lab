@@ -7,8 +7,9 @@ self.onmessage=async event=>{
  const source=event.data.source;
  try{
   if(typeof source!=='string')throw Error('Code source invalide');
-  importScripts('/pyodide/pyodide.js');
-  const pyodide=await loadPyodide({indexURL:new URL('/pyodide/',self.location.href).href});
+  const pyodideBase = new URL('../pyodide/', self.location.href).href;
+  importScripts(pyodideBase + 'pyodide.js');
+  const pyodide=await loadPyodide({indexURL:pyodideBase});
   const output=[];let used=0;let truncated=false;
   const append=(stream,value)=>{
    const text=String(value);
