@@ -202,3 +202,27 @@
 .app[data-theme=projector] .mode-heading,.app[data-theme=projector] .mode-status,.app[data-theme=projector] .role-card,.app[data-theme=projector] .role-card h3,.app[data-theme=projector] .mock-controls>h2{color:#000;background:#fff}
 @media(max-width:900px){.role-grid{grid-template-columns:1fr}}
 @media(max-width:440px){.role-card dl{grid-template-columns:1fr;gap:3px}.role-card dd{margin-bottom:10px}}
+
+
+/* G4 public — présentation compacte lorsque l'illustration de référence est absente. */
+.mascot-panel--missing{min-height:0;border-right:0;background:transparent;overflow:visible}
+.mascot-panel--missing .mascot-fallback{
+ min-height:0;margin:14px 12px;padding:22px 14px;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;gap:10px;text-align:center;
+ border:2px solid var(--edge);border-radius:20px;background:var(--panel);
+ color:var(--ink);box-shadow:0 6px 18px #20206516;
+}
+.mascot-fallback-symbol{font-size:clamp(3rem,6vw,5rem);line-height:1;color:#6355be}
+.mascot-panel--missing .mascot-fallback strong{font-size:clamp(1.3rem,2vw,2rem)}
+.mascot-panel--missing .mascot-fallback small{line-height:1.4}
+.app[data-theme=dark] .mascot-panel--missing{background:transparent}
+.app[data-theme=dark] .mascot-panel--missing .mascot-fallback{background:#343961;color:#fff}
+.app[data-theme=projector] .mascot-panel--missing .mascot-fallback{background:#fff;color:#000;box-shadow:none;border-color:#333}
+.app[data-theme=projector] .mascot-fallback-symbol{color:#000}
+@media(max-width:900px){
+ .mascot-panel--missing{border-bottom:0}
+ .mascot-panel--missing .mascot-fallback{width:100%;min-height:0;margin:8px 12px;padding:10px 14px;flex-direction:row;flex-wrap:wrap;gap:8px}
+ .mascot-panel--missing .mascot-fallback strong{font-size:1.1rem}
+ .mascot-panel--missing .mascot-fallback small{display:none}
+ .mascot-fallback-symbol{font-size:1.7rem}
+}
