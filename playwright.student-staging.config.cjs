@@ -7,7 +7,7 @@ module.exports=defineConfig({
  reporter:'list',
  use:{browserName:'chromium',headless:true,baseURL:'http://127.0.0.1:5179'},
  webServer:{
-  command:'npm.cmd --prefix frontend run dev -- --port 5179 --strictPort',
+  command:'npm --prefix frontend run dev -- --port 5179 --strictPort',
   url:'http://127.0.0.1:5179',
   reuseExistingServer:false,
   timeout:120000,
