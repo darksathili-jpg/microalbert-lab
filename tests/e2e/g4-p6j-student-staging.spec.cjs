@@ -4,7 +4,7 @@ const {test,expect}=require('@playwright/test');
 // Sans cette variable, le test n'affirme rien sur le mode normal.
 test('G4-P6-J : interface pilote élèves sans espaces techniques',async({page})=>{
 
- await page.goto('http://127.0.0.1:5173/');
+ await page.goto('http://127.0.0.1:5179/');
  await expect(page.getByRole('heading',{name:'Espace Élève'})).toBeVisible();
  await expect(page.getByText('Pilote élèves — non certifié')).toBeVisible();
  await expect(page.getByRole('button',{name:'Enseignant',exact:true})).toHaveCount(0);
