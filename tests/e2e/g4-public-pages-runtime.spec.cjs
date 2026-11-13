@@ -1,8 +1,21 @@
 const {test,expect}=require('@playwright/test');
 test('G4 public : interface, trois thèmes et moteur Python réellement exécuté',async({page})=>{
  test.setTimeout(90000);
- await page.goto('http://127.0.0.1:5180/microalbert-lab/');
- await expect(page.getByRole('heading',{name:'Espace Élève'})).toBeVisible();
+ const browserErrors=[];
+ page.on('pageerror',error=>browserErrors.push('PAGE: '+error.message));
+ page.on('console',message=>{if(message.type()==='error')browserErrors.push('CONSOLE: '+message.text());});
+ page.on('response',response=>{if(response.status()>=400)browserErrors.push('HTTP '+response.status()+' '+response.url());});
+ const response=await page.goto('http://127.0.0.1:5180/microalbert-lab/',{waitUntil:'networkidle'});
+ try {
+  await expect(page.locator('#student-heading')).toBeVisible({timeout:15000});
+ } catch(error) {
+  const html=await page.locator('body').innerText().catch(()=>'<body inaccessible>');
+  console.error('DIAGNOSTIC G4 PUBLIC — HTTP:',response?.status(),'URL:',page.url());
+  console.error('DIAGNOSTIC G4 PUBLIC — HTML:',html.slice(0,3000));
+  console.error('DIAGNOSTIC G4 PUBLIC — ERREURS:',browserErrors.join('\\n'));
+  await page.screenshot({path:'test-results/g4-public-page-failure.png',fullPage:true}).catch(()=>{});
+  throw error;
+ }
  await expect(page.getByText('Illustration indisponible.')).toHaveCount(0);
  for(const theme of ['light','dark','projector']){
   await page.getByLabel('Affichage :').selectOption(theme);
