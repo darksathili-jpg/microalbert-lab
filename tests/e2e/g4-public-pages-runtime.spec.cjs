@@ -22,7 +22,7 @@ test('G4 public : interface, trois thèmes et moteur Python réellement exécut�
   await expect(page.locator('.app')).toHaveAttribute('data-theme',theme);
  }
  await page.getByLabel('Affichage :').selectOption('light');
- const editor=page.getByLabel('Éditeur Python — ton programme');
+ const editor=page.getByRole('textbox',{name:/Code Python, édition au clavier/});
  await expect(editor).toBeVisible();
  await editor.fill('print(2 + 3)');
  await page.getByRole('button',{name:'Exécuter le code'}).first().click();
