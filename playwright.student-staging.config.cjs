@@ -1,7 +1,7 @@
 const {defineConfig}=require('@playwright/test');
 module.exports=defineConfig({
  testDir:'./tests/e2e',
- testMatch:'g4-p6j-student-staging.spec.cjs',
+ testMatch:['g4-p6j-student-staging.spec.cjs','g4-infra-01-python-themes.spec.cjs'],
  timeout:30000,
  retries:0,
  reporter:'list',
