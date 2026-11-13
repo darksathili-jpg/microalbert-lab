@@ -75,3 +75,24 @@ jobs:
       - name: Déployer GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Vérifier le site publié et ses ressources
+        shell: bash
+        run: |
+          set -euo pipefail
+          SITE="https://darksathili-jpg.github.io/microalbert-lab/"
+          for attempt in $(seq 1 12); do
+            echo "Contrôle du site publié — tentative ${attempt}/12"
+            if curl --fail --location --silent --show-error --max-time 15 "$SITE" -o /tmp/microalbert-live.html; then
+              ASSET=$(grep -oE 'src="/microalbert-lab/assets/[^"]+\.js"' /tmp/microalbert-live.html | head -n 1 | cut -d '"' -f 2 || true)
+              if [[ -n "$ASSET" ]] && curl --fail --location --silent --show-error --max-time 15 "https://darksathili-jpg.github.io$ASSET" -o /tmp/microalbert-live.js; then
+                if grep -q 'student-heading' /tmp/microalbert-live.js && curl --fail --location --silent --show-error --max-time 15 "${SITE}pyodide/pyodide.js" -o /dev/null; then
+                  echo "Site public, JavaScript et moteur Pyodide accessibles."
+                  exit 0
+                fi
+              fi
+            fi
+            if [[ "$attempt" -lt 12 ]]; then sleep 10; fi
+          done
+          echo "::error::Le site publié ne présente pas toutes les ressources attendues."
+          exit 1
+
