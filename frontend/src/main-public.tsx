@@ -16,7 +16,7 @@ function App(){
    <div className="edition">Démo publique · Sans compte</div>
    <label>Affichage : <select value={theme} onChange={e=>setTheme(e.target.value as Theme)}><option value="light">Clair</option><option value="dark">Sombre</option><option value="projector">Vidéoprojecteur</option></select></label>
   </header>
-  <div className="stage">
+  <div className={`stage${mascotReady ? "" : " stage--no-illustration"}`}>
    <aside className={`mascot-panel${mascotReady ? "" : " mascot-panel--missing"}`} aria-label="Illustration de MicroAlbert">{mascotReady?<img src={import.meta.env.BASE_URL+'microalbert-reference-left.png'} alt="MicroAlbert au tableau, avec son ordinateur et des livres de NSI" onError={()=>setMascotReady(false)}/>:<div className="mascot-fallback" aria-label="Repère pédagogique MicroAlbert"><span className="mascot-fallback-symbol" aria-hidden="true">⚛</span><strong>MicroAlbert</strong><span>Laboratoire Python</span><small>Explorer · Programmer · Vérifier</small></div>}</aside>
    <main className="workspace"><section className="sheet"><section aria-labelledby="student-heading">
     <h2 id="student-heading" className="mode-heading">Espace Élève <span className="mode-status">Pilote élèves — non certifié</span></h2>
