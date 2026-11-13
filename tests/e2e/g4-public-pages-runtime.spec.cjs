@@ -17,6 +17,17 @@ test('G4 public : interface, trois thèmes et moteur Python réellement exécut�
   throw error;
  }
  await expect(page.getByText('Illustration indisponible.')).toHaveCount(0);
+ await expect(page.locator('.stage--no-illustration')).toBeVisible();
+ const desktopStage=await page.locator('.stage').boundingBox();
+ const desktopMascot=await page.locator('.mascot-panel').boundingBox();
+ expect(desktopMascot.width).toBeLessThan(210);
+ expect(desktopStage.width).toBeGreaterThan(800);
+ await page.setViewportSize({width:390,height:844});
+ await expect(page.locator('#student-heading')).toBeVisible();
+ const mobileStage=await page.locator('.stage').boundingBox();
+ const mobileMascot=await page.locator('.mascot-panel').boundingBox();
+ expect(mobileMascot.width).toBeLessThanOrEqual(mobileStage.width);
+ await page.setViewportSize({width:1280,height:800});
  for(const theme of ['light','dark','projector']){
   await page.getByLabel('Affichage :').selectOption(theme);
   await expect(page.locator('.app')).toHaveAttribute('data-theme',theme);
