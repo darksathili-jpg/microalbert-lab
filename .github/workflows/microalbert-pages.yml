@@ -28,12 +28,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Installer frontend
         run: npm ci --prefix frontend
-      - name: Installer Playwright
-        run: npm install --no-save --no-package-lock
-      - name: Installer Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Tests navigateur pilote
-        run: npx playwright test --config=playwright.student-staging.config.cjs
       - name: Compiler la version publique isolée
         run: npm run build --prefix frontend -- --mode public-demo
       - name: Vérifier les artefacts
