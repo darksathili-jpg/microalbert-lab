@@ -226,3 +226,15 @@
  .mascot-panel--missing .mascot-fallback small{display:none}
  .mascot-fallback-symbol{font-size:1.7rem}
 }
+
+/* G5 — redonner la priorité à l'atelier Python quand l'image n'est pas fournie. */
+.stage.stage--no-illustration{grid-template-columns:minmax(160px,190px) minmax(0,1fr)}
+.stage--no-illustration .workspace{padding-left:0}
+.stage--no-illustration .mascot-panel--missing .mascot-fallback{padding:16px 10px}
+.stage--no-illustration .mascot-fallback-symbol{font-size:2.5rem}
+.stage--no-illustration .mascot-panel--missing .mascot-fallback strong{font-size:1.2rem}
+@media(max-width:900px){
+ .stage.stage--no-illustration{grid-template-columns:minmax(0,1fr)}
+ .stage--no-illustration .mascot-panel--missing .mascot-fallback{padding:8px 12px}
+ .stage--no-illustration .mascot-fallback-symbol{font-size:1.5rem}
+}
