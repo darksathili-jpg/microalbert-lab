@@ -66,3 +66,41 @@ jobs:
       - run: npm ci --prefix frontend
       - run: npm run build --prefix frontend
       - run: python3 scripts/check_staging_artifacts.py
+
+  private-preview:
+    name: Prévisualisation privée - activation conditionnelle
+    needs: [student-staging, regular-build]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/g4-infra-01-ci' && vars.MICROALBERT_PRIVATE_PREVIEW_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: microalbert-private-preview
+    steps:
+      - name: Vérifier les prérequis de sécurité
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          ACCESS_CONFIRMED: ${{ vars.MICROALBERT_ACCESS_ALL_HOSTNAMES_VERIFIED }}
+        run: |
+          test -n "$CF_ACCOUNT_ID" && test -n "$CF_API_TOKEN" && test -n "$CF_PROJECT"
+          test "$ACCESS_CONFIRMED" = "true" || { echo "STOP: protection Access non attestée"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefix frontend
+      - name: Compiler exclusivement la variante élève
+        env:
+          VITE_STUDENT_STAGING: 'true'
+        run: npm run build --prefix frontend
+      - run: python3 scripts/check_staging_artifacts.py
+      - name: Déployer après autorisation et protection Access
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+        run: npx --yes wrangler@3 pages deploy frontend/dist --project-name "$CF_PROJECT" --branch private-preview
