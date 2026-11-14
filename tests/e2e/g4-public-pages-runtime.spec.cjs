@@ -36,6 +36,13 @@ test('G4 public : interface, trois thèmes et moteur Python réellement exécut�
   await expect(page.locator('.app')).toHaveAttribute('data-theme',theme);
  }
  await page.getByLabel('Affichage :').selectOption('light');
+ await expect(page.getByText('Mode guidé local :')).toBeVisible();
+ await page.getByLabel('Ma question au tuteur').fill('Comment vérifier ma file ?');
+ await page.getByRole('button',{name:'Envoyer ma question'}).click();
+ await expect(page.getByRole('log',{name:'Échanges avec le tuteur'})).toContainText('Comment vérifier ma file ?');
+ await expect(page.getByRole('log',{name:'Échanges avec le tuteur'})).toContainText('trois valeurs distinctes');
+ await page.getByRole('button',{name:'Effacer les échanges'}).click();
+ await expect(page.getByRole('log',{name:'Échanges avec le tuteur'})).not.toContainText('Comment vérifier ma file ?');
  const editor=page.getByRole('textbox',{name:/Code Python, édition au clavier/});
  await expect(editor).toBeVisible();
  await editor.fill('print(2 + 3)');
