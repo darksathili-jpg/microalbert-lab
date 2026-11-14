@@ -127,3 +127,30 @@ def test_mock_backend_unchanged():
     client = TestClient(app)
     assert client.get("/api/health").json() == {"status": "ok", "provider": "mock"}
     assert client.get("/api/models").json()["data"][0]["id"] == "microalbert-mock"
+
+def test_system_instruction_kept_separate_from_user_message():
+    import json
+    def handler(request):
+        messages = json.loads(request.content)["messages"]
+        assert messages == [
+            {"role": "system", "content": "Pose une question sans donner le corrigé."},
+            {"role": "user", "content": "Je bloque sur ma fonction."},
+        ]
+        return httpx.Response(200, json={"choices": [{
+            "message": {"content": "Quel cas limite as-tu testé ?"}, "finish_reason": "stop"
+        }]})
+    result = asyncio.run(adapter(handler).chat(
+        "test-chat", "Je bloque sur ma fonction.",
+        system_instruction="Pose une question sans donner le corrigé."
+    ))
+    assert "cas limite" in result.reply
+
+
+def test_reject_blank_system_instruction_without_transport():
+    def no_network(request):
+        raise AssertionError("Unexpected request")
+    with pytest.raises(ProviderError) as error:
+        asyncio.run(adapter(no_network).chat(
+            "test-chat", "Bonjour", system_instruction="   "
+        ))
+    assert error.value.code == "invalid_input"
