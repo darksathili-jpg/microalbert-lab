@@ -6,7 +6,8 @@ from typing import Literal
 from fastapi import Depends, FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
-from .albert_adapter import AlbertAdapter, ProviderError
+from .albert_adapter import AlbertAdapter, ProviderConfig, ProviderError
+import httpx
 from .pedagogical_tutor import TutorContext, decide_tutor_action, tutor_system_instructions
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
 
@@ -137,8 +138,24 @@ class TutorRequest(BaseModel):
 
 
 def get_tutor_adapter() -> AlbertAdapter | None:
-    """No live provider is enabled by default. Explicit server injection only."""
-    return None
+    """Explicit opt-in only; key remains on the server, never in Pages."""
+    if os.getenv("MICROALBERT_PROVIDER", "mock") != "albert":
+        return None
+    if os.getenv("MICROALBERT_REAL_ACCESS_APPROVED") != "yes":
+        return None
+    token = os.getenv("ALBERT_API_KEY", "")
+    models = frozenset(x.strip() for x in os.getenv("ALBERT_ALLOWED_MODELS", "").split(",") if x.strip())
+    if not token.strip() or not models:
+        return None
+    try:
+        config = ProviderConfig(
+            base_url=os.getenv("ALBERT_API_BASE_URL", "https://albert.api.etalab.gouv.fr"),
+            allowed_models=models,
+            timeout_seconds=float(os.getenv("ALBERT_TIMEOUT_SECONDS", "15")),
+        )
+        return AlbertAdapter(config, token=token, transport=httpx.AsyncHTTPTransport(retries=0))
+    except (ValueError, ProviderError):
+        return None
 
 
 @app.post("/api/secure/tutor", response_model=ChatResponse)
