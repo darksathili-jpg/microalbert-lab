@@ -38,6 +38,8 @@ def test_teacher_tutor_with_injected_mock_transport():
         assert [m["role"] for m in messages] == ["system", "user"]
         assert "tuteur" in messages[0]["content"].lower()
         assert "Comment raisonner sur une file ?" in messages[1]["content"]
+        assert "premier entré, premier sorti" in messages[1]["content"]
+        assert "cas d\'une file vide" in messages[1]["content"]
         return httpx.Response(200, json={"choices":[{"message":{"content":"Quelle valeur quitte la file en premier ?"},"finish_reason":"stop"}]})
     adapter = AlbertAdapter(ProviderConfig("https://albert.api.etalab.gouv.fr", frozenset({MODEL})),
                             token="FAKE_TEST_TOKEN", transport=httpx.MockTransport(handler))
