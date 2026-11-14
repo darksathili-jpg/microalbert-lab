@@ -124,3 +124,31 @@ def test_nested_dynamic_execution_is_not_attributed_to_outer_function():
         "def defiler(f):\n return f.pop(0)\n"
     )
     assert "dynamic_execution" not in {f["code"] for f in assess(source)["findings"]}
+
+
+def test_definition_time_effects_detected_without_running_code(tmp_path):
+    from app.mission_assessment import assess_queue_submission
+    marker = tmp_path / "must_not_exist"
+    source = ("def enfiler(f, v=__import__('pathlib').Path(" + repr(str(marker)) + ").touch()):\n"
+              "    f.append(v)\n"
+              "def defiler(f):\n    return f.pop(0)\n")
+    result = assess_queue_submission(source)
+    assert "definition_time_effect" in {finding["code"] for finding in result["findings"]}
+    assert not marker.exists()
+    assert result["functional_correctness"] == "not_evaluated"
+
+
+def test_definition_time_annotation_and_class_body_are_reported():
+    from app.mission_assessment import assess_queue_submission
+    source = ("class SideEffect:\n    print('not executed')\n"
+              "def enfiler(f: print('not executed'), v):\n    f.append(v)\n"
+              "def defiler(f):\n    return f.pop(0)\n")
+    result = assess_queue_submission(source)
+    assert "definition_time_effect" in {finding["code"] for finding in result["findings"]}
+
+
+def test_plain_definitions_do_not_trigger_definition_time_warning():
+    from app.mission_assessment import assess_queue_submission
+    source = "def enfiler(f, v):\n    f.append(v)\ndef defiler(f):\n    return f.pop(0)\n"
+    result = assess_queue_submission(source)
+    assert "definition_time_effect" not in {finding["code"] for finding in result["findings"]}

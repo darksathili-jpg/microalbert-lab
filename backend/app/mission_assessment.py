@@ -83,6 +83,25 @@ def assess_queue_submission(source: str) -> dict:
                    and isinstance(node.value.value, str))):
         findings.append({"code": "top_level_effect", "function": None,
                          "question": "Quelles instructions s'exécuteraient dès le lancement de ce fichier ?"})
+    # Function definitions evaluate decorators, defaults and annotations at
+    # definition time. Parsing is safe, importing the submitted file is not.
+    # A class body also runs when its class statement is executed.
+    def definition_time_risk(node):
+        if isinstance(node, ast.ClassDef):
+            return True
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return False
+        args = node.args
+        return bool(node.decorator_list or args.defaults
+                    or any(default is not None for default in args.kw_defaults)
+                    or node.returns is not None
+                    or any(arg.annotation is not None for arg in
+                           [*args.posonlyargs, *args.args, *args.kwonlyargs,
+                            *([args.vararg] if args.vararg else []),
+                            *([args.kwarg] if args.kwarg else [])]))
+    if any(definition_time_risk(node) for node in tree.body):
+        findings.append({"code": "definition_time_effect", "function": None,
+                         "question": "Que peut exécuter Python au moment de définir une fonction ou une classe ?"})
     for name, arity in (("enfiler", 2), ("defiler", 1)):
         matches = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name]
         def note(code, question):

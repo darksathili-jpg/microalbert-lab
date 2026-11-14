@@ -11,6 +11,7 @@ PHASE_QUESTIONS = {
     "bilan": "Comment expliquerais-tu la différence entre une file et une pile ?",
 }
 FOLLOW_UP = {
+    "definition_time_effect": "Que peut évaluer Python avant même le premier appel de ta fonction ?",
     "top_level_effect": "Quelles instructions seraient exécutées avant même l'appel de tes fonctions ?",
     "dynamic_execution": "Peux-tu expliquer le rôle de l'évaluation dynamique de texte dans cette mission ?",
     "syntax": "Peux-tu isoler la ligne signalée par Python et expliquer ce qui manque ?",
@@ -22,7 +23,7 @@ FOLLOW_UP = {
     "decorated_definition": "Peux-tu expliquer ce que change le décorateur au moment de définir la fonction ?",
     "async_definition": "Cette mission nécessite-t-elle une fonction asynchrone ?",
 }
-PRIORITY = ("syntax", "top_level_effect", "dynamic_execution", "missing_function", "duplicate_definition", "async_definition",
+PRIORITY = ("syntax", "top_level_effect", "definition_time_effect", "dynamic_execution", "missing_function", "duplicate_definition", "async_definition",
             "decorated_definition", "signature", "empty_body", "missing_return")
 
 

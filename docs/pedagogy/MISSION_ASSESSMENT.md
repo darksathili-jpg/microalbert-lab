@@ -20,3 +20,8 @@ Les constats restent des indices, jamais une note ni une preuve de conformité. 
 L'analyseur signale maintenant les instructions exécutables placées au premier niveau du fichier, en excluant la chaîne de documentation du module. Il repère aussi les appels directs à `eval`, `exec` et `compile` dans les fonctions attendues. Ces constats conduisent à des questions socratiques sur les effets observables et la nécessité d'exécuter du texte comme du code. Aucun de ces appels n'est exécuté pendant l'analyse.
 
 Ce contrôle est **heuristique et non une sandbox** : les appels indirects, les alias, les décorateurs et d'autres effets de bord peuvent échapper à l'analyse. Il ne doit jamais autoriser l'exécution du code d'un élève. Les tests de régression vérifient notamment qu'aucun fichier témoin n'est créé.
+
+
+### Risques lors de la définition des fonctions et des classes
+
+Le diagnostic `definition_time_effect` signale les corps de classes, les décorateurs, les valeurs par défaut et les annotations de fonctions : ces expressions peuvent être évaluées lors de l'importation du module, avant tout appel explicite à une fonction. Le code de l'élève n'est **jamais importé ni exécuté** par l'analyseur. Cette détection est conservatrice : elle peut signaler des expressions inoffensives. Elle ne prouve ni une attaque ni la correction fonctionnelle. Les tests de régression vérifient notamment qu'une valeur par défaut à effet de bord ne crée aucun fichier.
