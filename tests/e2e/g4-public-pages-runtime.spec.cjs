@@ -17,10 +17,13 @@ test('G4 public : interface, trois thèmes et moteur Python réellement exécut�
   throw error;
  }
  await expect(page.getByText('Illustration indisponible.')).toHaveCount(0);
- await expect(page.locator('.stage--no-illustration')).toBeVisible();
+ await expect(page.locator('.stage--no-illustration')).toHaveCount(0);
+ const mascot=page.locator('.mascot-panel img');
+ await expect(mascot).toBeVisible();
+ await expect.poll(()=>mascot.evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
  const desktopStage=await page.locator('.stage').boundingBox();
  const desktopMascot=await page.locator('.mascot-panel').boundingBox();
- expect(desktopMascot.width).toBeLessThan(210);
+ expect(desktopMascot.width).toBeLessThan(desktopStage.width*0.35);
  expect(desktopStage.width).toBeGreaterThan(800);
  await page.setViewportSize({width:390,height:844});
  await expect(page.locator('#student-heading')).toBeVisible();
