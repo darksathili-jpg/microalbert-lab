@@ -64,11 +64,15 @@ class AlbertAdapter:
         self._token = token
         self._transport = transport
 
-    async def chat(self, model_id: str, message: str) -> ProviderReply:
+    async def chat(self, model_id: str, message: str, *, system_instruction: str | None = None) -> ProviderReply:
         if model_id not in self.config.allowed_models:
             raise ProviderError("model_not_allowed", 400)
         if not message.strip() or len(message) > 4000:
             raise ProviderError("invalid_input", 422)
+        if system_instruction is not None and (not system_instruction.strip() or len(system_instruction) > 4000):
+            raise ProviderError("invalid_input", 422)
+        messages = ([{"role": "system", "content": system_instruction}] if system_instruction is not None else [])
+        messages.append({"role": "user", "content": message})
         try:
             async with httpx.AsyncClient(
                 transport=self._transport,
@@ -80,7 +84,7 @@ class AlbertAdapter:
                     "POST",
                     self.config.base_url.rstrip("/") + "/v1/chat/completions",
                     headers={"Authorization": f"Bearer {self._token}"},
-                    json={"model": model_id, "messages": [{"role": "user", "content": message}]},
+                    json={"model": model_id, "messages": messages},
                 ) as response:
                     if response.status_code in (401, 403):
                         raise ProviderError("provider_auth_failed", 503)
