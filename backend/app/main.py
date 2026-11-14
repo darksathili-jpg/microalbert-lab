@@ -10,6 +10,7 @@ from .albert_adapter import AlbertAdapter, ProviderConfig, ProviderError
 import httpx
 from .pedagogical_tutor import TutorContext, TutorAction, decide_tutor_action, tutor_system_instructions
 from .mission_assessment import assess_queue_submission
+from .assessment_dialogue import select_question
 from .tutor_progress import TutorProgressStore
 from .tutor_output_guard import review_tutor_output
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
@@ -241,6 +242,8 @@ class AssessmentRequest(BaseModel):
     """Source Python submitted for static analysis only, never executed."""
     mission_id: Literal["file"]
     source: str = Field(min_length=1, max_length=8000)
+    phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"] = "verification"
+    previous_finding: str | None = Field(default=None, max_length=80)
 
 
 class AssessmentResponse(BaseModel):
@@ -249,6 +252,7 @@ class AssessmentResponse(BaseModel):
     findings: list[dict[str, str | None]]
     functional_correctness: Literal["not_evaluated"]
     next_question: str
+    finding_code: str | None = None
     warnings: list[str]
 
 
@@ -272,10 +276,9 @@ def secure_assessment(
         raise HTTPException(status_code=422, detail={
             "code": "invalid_submission", "message": "Programme Python invalide"
         }) from None
-    question = (report["findings"][0]["question"] if report["findings"] else
-                "Quels tests permettraient de vérifier le comportement de ta file, notamment lorsqu'elle est vide ?")
+    question, finding_code = select_question(report, payload.phase, payload.previous_finding)
     return AssessmentResponse(
-        **report, next_question=question,
+        **report, next_question=question, finding_code=finding_code,
         warnings=["static_analysis_only", "functional_correctness_not_evaluated",
                   "teacher_supervised_pilot", "no_student_code_execution"],
     )
