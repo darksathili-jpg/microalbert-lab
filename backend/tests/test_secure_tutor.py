@@ -1,5 +1,6 @@
 """No live credentials or network: authorization and simulated Albert tutor tests."""
 import httpx
+import json
 from fastapi.testclient import TestClient
 from app.main import app, get_secure_registry, get_secure_limiter, get_tutor_adapter
 from app.access_security import LocalTokenRegistry, FixedWindowRateLimiter, Principal
@@ -33,7 +34,10 @@ def test_teacher_tutor_with_injected_mock_transport():
     def handler(request):
         seen.append(request)
         assert request.url.host == "albert.api.etalab.gouv.fr"
-        assert "tuteur" in request.content.decode().lower()
+        messages = json.loads(request.content)["messages"]
+        assert [m["role"] for m in messages] == ["system", "user"]
+        assert "tuteur" in messages[0]["content"].lower()
+        assert "Comment raisonner sur une file ?" in messages[1]["content"]
         return httpx.Response(200, json={"choices":[{"message":{"content":"Quelle valeur quitte la file en premier ?"},"finish_reason":"stop"}]})
     adapter = AlbertAdapter(ProviderConfig("https://albert.api.etalab.gouv.fr", frozenset({MODEL})),
                             token="FAKE_TEST_TOKEN", transport=httpx.MockTransport(handler))
