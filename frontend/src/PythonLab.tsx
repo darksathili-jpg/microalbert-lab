@@ -29,6 +29,23 @@ export default function PythonLab() {
  const [hintCount, setHintCount] = useState(0);
  const [testNotes, setTestNotes] = useState('');
  const [view, setView] = useState<'code'|'tests'>('code');
+ const [studentQuestion, setStudentQuestion] = useState('');
+ const [tutorHistory, setTutorHistory] = useState<{role:'eleve'|'tuteur';text:string}[]>([]);
+ function askTutor() {
+  const question = studentQuestion.trim();
+  if (!question || question.length > 500) return;
+  const answer = step === 0
+   ? 'Une file suit le principe premier entré, premier sorti. Peux-tu illustrer ce principe avec trois valeurs distinctes ?'
+   : step === 1
+   ? 'Quelle extrémité de la liste représente la sortie de la file ? Justifie ton choix avant de programmer.'
+   : step === 2
+   ? 'Vérifie d’abord le comportement avec une liste vide, puis avec deux valeurs. Quelle instruction de ton programme faut-il examiner ?'
+   : step === 3
+   ? 'Écris le résultat attendu avant d’exécuter ton test. Quel cas limite manque encore ?'
+   : 'Compare l’ordre de retrait de trois éléments dans une file et dans une pile. Que constates-tu ?';
+  setTutorHistory(history=>[...history,{role:'eleve',text:question},{role:'tuteur',text:answer}]);
+  setStudentQuestion('');
+ }
  function inspect() {
   const names = ['enfiler','defiler'].filter(name => new RegExp('^\\s*def\\s+'+name+'\\s*\\(', 'm').test(source));
   if (names.length < 2) setFeedback('Vérifie que les fonctions enfiler et defiler sont définies.');
@@ -51,6 +68,16 @@ export default function PythonLab() {
   <p>Objectif : implémenter une file représentée par une liste Python. Tu écris le code ; le tuteur questionne ta démarche sans livrer le corrigé.</p>
   <nav className="lab-steps" aria-label="Étapes de la mission">{stages.map((s,i)=><button key={s.name} type="button" aria-current={step===i?'step':undefined} onClick={()=>setStep(i)}>{i+1}. {s.name}</button>)}</nav>
   <p className="lab-question"><strong>Question du tuteur :</strong> {stages[step].question}</p>
+  <section className="lab-dialogue" aria-labelledby="lab-dialogue-title">
+   <h3 id="lab-dialogue-title">Dialoguer avec le tuteur NSI</h3>
+   <p className="lab-notice"><strong>Mode guidé local :</strong> réponses pédagogiques prédéfinies, non générées par Albert. Aucune question n’est transmise à un serveur.</p>
+   <div className="lab-conversation" role="log" aria-label="Échanges avec le tuteur" aria-live="polite">
+    {tutorHistory.length===0?<p className="lab-notice">Pose une question sur la mission pour recevoir une piste de réflexion.</p>:tutorHistory.map((entry,i)=><p key={i} className={'lab-message lab-message--'+entry.role}><strong>{entry.role==='eleve'?'Élève':'Tuteur local'} :</strong> {entry.text}</p>)}
+   </div>
+   <label htmlFor="lab-student-question">Ma question au tuteur</label>
+   <textarea id="lab-student-question" className="lab-notes" rows={2} maxLength={500} value={studentQuestion} onChange={e=>setStudentQuestion(e.target.value)} placeholder="Exemple : comment vérifier que ma file fonctionne ?" />
+   <div className="lab-actions"><button type="button" disabled={!studentQuestion.trim()} onClick={askTutor}>Envoyer ma question</button><button type="button" disabled={tutorHistory.length===0} onClick={()=>setTutorHistory([])}>Effacer les échanges</button></div>
+  </section>
   <div className="lab-tabs" role="group" aria-label="Outils de travail"><button type="button" aria-pressed={view==='code'} onClick={()=>setView('code')}>Code Python</button><button type="button" aria-pressed={view==='tests'} onClick={()=>setView('tests')}>Mes tests</button></div>
   {view==='code'?<><label htmlFor="lab-code">Éditeur Python — ton programme</label><PythonEditor id="lab-code" value={source} onChange={setSource} describedBy="lab-execution-note"/><p id="lab-execution-note" className="lab-notice">Éditeur local avec exécution Python séparée. Le contrôle de structure ci-dessous reste uniquement textuel.</p><PythonRunner source={source}/><div className="lab-actions"><button type="button" onClick={inspect}>Vérifier la structure (sans exécuter)</button><button type="button" onClick={hint} disabled={hintCount>=3}>Demander un indice ({3-hintCount} restants)</button></div></>:<><p>Prépare les appels et les résultats attendus avant de les exécuter dans le moteur Python local.</p><pre className="lab-examples">{'f = []\nenfiler(f, 7)\nenfiler(f, 4)\nprint(f)  # attendu : [7, 4]\nprint(defiler(f))  # attendu : 7\nprint(defiler([])) # attendu : None'}</pre><label htmlFor="lab-notes">Mes observations et justifications</label><textarea id="lab-notes" className="lab-notes" value={testNotes} onChange={e=>setTestNotes(e.target.value)} placeholder="Décris tes tests, les valeurs attendues et ce que tu dois vérifier." /></>}
   <p className="lab-feedback" role="status">{feedback}</p>
