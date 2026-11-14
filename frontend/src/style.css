@@ -238,3 +238,21 @@
  .stage--no-illustration .mascot-panel--missing .mascot-fallback{padding:8px 12px}
  .stage--no-illustration .mascot-fallback-symbol{font-size:1.5rem}
 }
+
+/* G6 — la colonne du héros n'est pas un panneau violet vide.
+   Le visuel suit le défilement sans être étiré ni recadré. */
+@media(min-width:901px){
+ .stage>.mascot-panel:not(.mascot-panel--missing){
+  position:sticky;top:12px;align-self:start;min-height:0;height:auto;
+  background:transparent;border:0;overflow:visible;
+ }
+ .stage>.mascot-panel:not(.mascot-panel--missing) img{
+  display:block;width:100%;height:auto;max-height:calc(100vh - 24px);
+  aspect-ratio:auto;object-fit:contain;object-position:top center;
+  border-radius:0 0 14px 14px;
+ }
+}
+@media(max-width:900px){
+ .stage>.mascot-panel:not(.mascot-panel--missing){background:transparent;border:0}
+ .stage>.mascot-panel:not(.mascot-panel--missing) img{aspect-ratio:auto}
+}
