@@ -128,7 +128,7 @@ def secure_chat(
 class TutorRequest(BaseModel):
     """Teacher-supervised NSI tutor request; never available from static Pages."""
     model_id: str = Field(min_length=1, max_length=120)
-    mission_id: str = Field(min_length=1, max_length=120)
+    mission_id: Literal["file", "balises"]
     phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"]
     message: str = Field(min_length=1, max_length=2000)
     attempts: int = Field(ge=0, le=100)
@@ -187,7 +187,7 @@ async def secure_tutor(
     instruction = tutor_system_instructions(decision)
     # Adapter's existing interface accepts one user message, not a system role.
     # Explicitly mark this as a constrained pilot; model obedience is not guaranteed.
-    prompt = instruction + "\\nMission : " + payload.mission_id + "\\nQuestion : " + payload.message
+    prompt = instruction + "\nMission : " + payload.mission_id + "\nQuestion : " + payload.message
     try:
         result = await adapter.chat(payload.model_id, prompt)
     except ProviderError as exc:
