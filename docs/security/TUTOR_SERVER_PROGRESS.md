@@ -19,3 +19,9 @@ Exécuter `PYTHONPATH=backend pytest -q backend/tests/test_tutor_progress.py bac
 ## Suite
 
 Introduire des preuves d'exécution Python et une grille d'évaluation indépendante, sans déduire la réussite d'une simple déclaration du navigateur. Toute ouverture aux élèves exigera une authentification réelle, un stockage serveur adapté, des protections anti-abus et la vérification des quotas financiers Albert.
+
+## Recette corrective du 14 novembre 2026
+
+Le workflow du commit `6c3406bd` a échoué avec **153 tests réussis et 1 échec** dans `test_progress_isolated_bounded_and_expires`. Le scénario essayait de vérifier l'éviction après l'enregistrement de seulement deux sessions alors que la capacité était de deux : les lectures `snapshot` ne créent pas de session. Le test a été corrigé pour enregistrer trois sessions distinctes avant d'attendre l'éviction. Des cas complémentaires couvrent le plafonnement des tentatives et indices, l'isolation par mission et identité, l'expiration exacte et le rejet des clés invalides.
+
+**Invariant à préserver :** une lecture de progression inconnue ne doit pas créer de session, et l'éviction ne doit intervenir que lors de l'enregistrement d'une nouvelle clé au-delà de la capacité. Ce magasin reste volatile et ne constitue pas un mécanisme d'authentification ni un registre durable d'élèves. La validation du lot exige une exécution complète réussie du workflow Pages ; ne pas déclarer de publication sur la seule base du commit.
