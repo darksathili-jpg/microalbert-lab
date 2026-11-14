@@ -125,6 +125,19 @@ def secure_chat(
     )
 
 
+TUTOR_MISSIONS = {
+    "file": (
+        "Terminale NSI : implémenter une file de messages représentée par "
+        "une liste Python ; expliquer premier entré, premier sorti ; "
+        "tester l'enfilage, le défilage et le cas d'une file vide."
+    ),
+    "balises": (
+        "NSI : analyser une suite de balises lumineuses avec Python ; "
+        "justifier les étapes de traitement et vérifier les cas limites."
+    ),
+}
+
+
 class TutorRequest(BaseModel):
     """Teacher-supervised NSI tutor request; never available from static Pages."""
     model_id: str = Field(min_length=1, max_length=120)
@@ -185,9 +198,10 @@ async def secure_tutor(
     )
     decision = decide_tutor_action(context)
     instruction = tutor_system_instructions(decision)
-    # Adapter's existing interface accepts one user message, not a system role.
-    # Explicitly mark this as a constrained pilot; model obedience is not guaranteed.
-    prompt = "Mission : " + payload.mission_id + "\nQuestion de l’élève : " + payload.message
+    # La consigne officielle provient du serveur, non de l'élève.
+    prompt = ("Mission : " + payload.mission_id
+              + "\nConsigne : " + TUTOR_MISSIONS[payload.mission_id]
+              + "\nQuestion de l’élève : " + payload.message)
     try:
         result = await adapter.chat(payload.model_id, prompt, system_instruction=instruction)
     except ProviderError as exc:
