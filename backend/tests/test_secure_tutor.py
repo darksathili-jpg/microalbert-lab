@@ -51,3 +51,24 @@ def test_teacher_tutor_with_injected_mock_transport():
             assert len(seen) == 1
     finally:
         app.dependency_overrides.clear()
+
+def test_real_provider_requires_explicit_server_approval(monkeypatch):
+    monkeypatch.setenv("MICROALBERT_PROVIDER", "albert")
+    monkeypatch.setenv("ALBERT_API_KEY", "TEST_ONLY_NOT_REAL")
+    monkeypatch.setenv("ALBERT_ALLOWED_MODELS", MODEL)
+    monkeypatch.delenv("MICROALBERT_REAL_ACCESS_APPROVED", raising=False)
+    from app.main import get_tutor_adapter
+    assert get_tutor_adapter() is None
+    monkeypatch.setenv("MICROALBERT_REAL_ACCESS_APPROVED", "yes")
+    instance = get_tutor_adapter()
+    assert isinstance(instance, AlbertAdapter)
+    assert MODEL in instance.config.allowed_models
+
+def test_real_provider_rejects_invalid_origin(monkeypatch):
+    monkeypatch.setenv("MICROALBERT_PROVIDER", "albert")
+    monkeypatch.setenv("MICROALBERT_REAL_ACCESS_APPROVED", "yes")
+    monkeypatch.setenv("ALBERT_API_KEY", "TEST_ONLY_NOT_REAL")
+    monkeypatch.setenv("ALBERT_ALLOWED_MODELS", MODEL)
+    monkeypatch.setenv("ALBERT_API_BASE_URL", "https://attacker.example")
+    from app.main import get_tutor_adapter
+    assert get_tutor_adapter() is None
