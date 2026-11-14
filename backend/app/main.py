@@ -187,9 +187,9 @@ async def secure_tutor(
     instruction = tutor_system_instructions(decision)
     # Adapter's existing interface accepts one user message, not a system role.
     # Explicitly mark this as a constrained pilot; model obedience is not guaranteed.
-    prompt = instruction + "\nMission : " + payload.mission_id + "\nQuestion : " + payload.message
+    prompt = "Mission : " + payload.mission_id + "\nQuestion de l’élève : " + payload.message
     try:
-        result = await adapter.chat(payload.model_id, prompt)
+        result = await adapter.chat(payload.model_id, prompt, system_instruction=instruction)
     except ProviderError as exc:
         raise HTTPException(status_code=exc.status, detail={
             "code": exc.code, "message": "Service Albert indisponible"
