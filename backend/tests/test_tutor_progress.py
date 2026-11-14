@@ -14,6 +14,7 @@ def test_progress_isolated_bounded_and_expires():
     assert store.record("teacher", "file", hint_given=True).hints_used == 1
     assert store.snapshot("other", "file").hints_used == 0
     assert store.snapshot("teacher", "balises").hints_used == 0
+    store.record("second", "file", hint_given=False)
     store.record("third", "file", hint_given=False)
     assert store.snapshot("teacher", "file").attempts == 0  # oldest evicted
     now[0] += 11
