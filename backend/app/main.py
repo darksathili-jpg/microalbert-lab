@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from .albert_adapter import AlbertAdapter, ProviderError
+from .pedagogical_tutor import TutorContext, decide_tutor_action, tutor_system_instructions
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
 
 app = FastAPI(title="MicroAlbert Lab API", docs_url=None, redoc_url=None)
@@ -120,4 +121,64 @@ def secure_chat(
         model_id="microalbert-mock", finish_reason="stop",
         request_id=secrets.token_hex(8),
         warnings=["mock_provider", "authenticated_local_demo", "not_a_pedagogical_answer"],
+    )
+
+
+class TutorRequest(BaseModel):
+    """Teacher-supervised NSI tutor request; never available from static Pages."""
+    model_id: str = Field(min_length=1, max_length=120)
+    mission_id: str = Field(min_length=1, max_length=120)
+    phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"]
+    message: str = Field(min_length=1, max_length=2000)
+    attempts: int = Field(ge=0, le=100)
+    hints_used: int = Field(ge=0, le=3)
+    requested_solution: bool = False
+    has_student_work: bool = False
+
+
+def get_tutor_adapter() -> AlbertAdapter | None:
+    """No live provider is enabled by default. Explicit server injection only."""
+    return None
+
+
+@app.post("/api/secure/tutor", response_model=ChatResponse)
+async def secure_tutor(
+    payload: TutorRequest,
+    principal: Principal = Depends(authenticated_principal),
+    limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
+    adapter: AlbertAdapter | None = Depends(get_tutor_adapter),
+):
+    """Protected NSI teaching pilot: no student self-enrolment or public credential."""
+    try:
+        authorize(principal, "enseignant", "chat:review")
+        limiter.require(principal.subject)
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+    if adapter is None:
+        raise HTTPException(status_code=503, detail={
+            "code": "provider_not_configured", "message": "Albert non activé sur ce serveur"
+        })
+    context = TutorContext(
+        mission_id=payload.mission_id, phase=payload.phase,
+        attempts=payload.attempts, hints_used=payload.hints_used,
+        requested_solution=payload.requested_solution,
+        has_student_work=payload.has_student_work,
+    )
+    decision = decide_tutor_action(context)
+    instruction = tutor_system_instructions(decision)
+    # Adapter's existing interface accepts one user message, not a system role.
+    # Explicitly mark this as a constrained pilot; model obedience is not guaranteed.
+    prompt = instruction + "\\nMission : " + payload.mission_id + "\\nQuestion : " + payload.message
+    try:
+        result = await adapter.chat(payload.model_id, prompt)
+    except ProviderError as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Service Albert indisponible"
+        }) from None
+    return ChatResponse(
+        reply=result.reply, model_id=result.model_id,
+        finish_reason=result.finish_reason, request_id=secrets.token_hex(8),
+        warnings=["teacher_supervised_pilot", "model_output_unverified", "no_solution_guarantee"],
     )
