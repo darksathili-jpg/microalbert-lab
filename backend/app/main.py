@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from .albert_adapter import AlbertAdapter, ProviderConfig, ProviderError
 import httpx
-from .pedagogical_tutor import TutorContext, decide_tutor_action, tutor_system_instructions
+from .pedagogical_tutor import TutorContext, TutorAction, decide_tutor_action, tutor_system_instructions
+from .tutor_progress import TutorProgressStore
 from .tutor_output_guard import review_tutor_output
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
 
@@ -126,6 +127,13 @@ def secure_chat(
     )
 
 
+_tutor_progress = TutorProgressStore()
+
+
+def get_tutor_progress() -> TutorProgressStore:
+    return _tutor_progress
+
+
 TUTOR_MISSIONS = {
     "file": (
         "Terminale NSI : implémenter une file de messages représentée par "
@@ -178,6 +186,7 @@ async def secure_tutor(
     principal: Principal = Depends(authenticated_principal),
     limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
     adapter: AlbertAdapter | None = Depends(get_tutor_adapter),
+    progress_store: TutorProgressStore = Depends(get_tutor_progress),
 ):
     """Protected NSI teaching pilot: no student self-enrolment or public credential."""
     try:
@@ -191,9 +200,12 @@ async def secure_tutor(
         raise HTTPException(status_code=503, detail={
             "code": "provider_not_configured", "message": "Albert non activé sur ce serveur"
         })
+    # Counters from the browser are untrusted and deliberately ignored.
+    # This pilot is teacher-only; no durable student profile is stored.
+    progress = progress_store.snapshot(principal.subject, payload.mission_id)
     context = TutorContext(
         mission_id=payload.mission_id, phase=payload.phase,
-        attempts=payload.attempts, hints_used=payload.hints_used,
+        attempts=progress.attempts, hints_used=progress.hints_used,
         requested_solution=payload.requested_solution,
         has_student_work=payload.has_student_work,
     )
@@ -210,6 +222,10 @@ async def secure_tutor(
             "code": exc.code, "message": "Service Albert indisponible"
         }) from None
     review = review_tutor_output(result.reply)
+    # Commit progress only after a successful provider response.
+    # Blocked output must not consume a hint.
+    progress_store.record(principal.subject, payload.mission_id,
+                          hint_given=(decision.action == TutorAction.HINT and not review.blocked))
     warnings = ["teacher_supervised_pilot", "model_output_unverified", "no_solution_guarantee"]
     if review.blocked:
         warnings.extend(["output_guard_blocked", "output_guard_" + review.reason])
