@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 from .albert_adapter import AlbertAdapter, ProviderConfig, ProviderError
 import httpx
 from .pedagogical_tutor import TutorContext, decide_tutor_action, tutor_system_instructions
+from .tutor_output_guard import review_tutor_output
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
 
 app = FastAPI(title="MicroAlbert Lab API", docs_url=None, redoc_url=None)
@@ -208,8 +209,12 @@ async def secure_tutor(
         raise HTTPException(status_code=exc.status, detail={
             "code": exc.code, "message": "Service Albert indisponible"
         }) from None
+    review = review_tutor_output(result.reply)
+    warnings = ["teacher_supervised_pilot", "model_output_unverified", "no_solution_guarantee"]
+    if review.blocked:
+        warnings.extend(["output_guard_blocked", "output_guard_" + review.reason])
     return ChatResponse(
-        reply=result.reply, model_id=result.model_id,
+        reply=review.reply, model_id=result.model_id,
         finish_reason=result.finish_reason, request_id=secrets.token_hex(8),
-        warnings=["teacher_supervised_pilot", "model_output_unverified", "no_solution_guarantee"],
+        warnings=warnings,
     )
