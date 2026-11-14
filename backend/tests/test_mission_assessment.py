@@ -31,3 +31,52 @@ def test_no_execution(tmp_path):
     marker = tmp_path / "unsafe"
     assess(f"__import__('pathlib').Path({str(marker)!r}).write_text('unsafe')")
     assert not marker.exists()
+
+
+def test_nested_return_is_not_mistaken_for_defiler_return():
+    source = (
+        "def enfiler(file, valeur):\n    file.append(valeur)\n"
+        "def defiler(file):\n"
+        "    def interne():\n        return 42\n"
+        "    interne()\n"
+    )
+    report = assess(source)
+    assert report["syntax_valid"] is True
+    assert any(item["code"] == "missing_return" for item in report["findings"])
+    assert report["functional_correctness"] == "not_evaluated"
+
+
+def test_return_in_control_flow_counts_as_structural_evidence_only():
+    source = (
+        "def enfiler(file, valeur):\n    file.append(valeur)\n"
+        "def defiler(file):\n    if file:\n        return None\n"
+    )
+    report = assess(source)
+    assert not any(item["code"] == "missing_return" for item in report["findings"])
+    assert report["functional_correctness"] == "not_evaluated"
+
+
+def test_decorated_functions_are_flagged_without_execution(tmp_path):
+    marker = tmp_path / "decorator_was_executed"
+    source = (
+        "def dangerous(fn):\n"
+        f"    __import__('pathlib').Path({str(marker)!r}).touch()\n"
+        "    return fn\n"
+        "@dangerous\n"
+        "def enfiler(file, valeur):\n    file.append(valeur)\n"
+        "def defiler(file):\n    return None\n"
+    )
+    report = assess(source)
+    assert any(item["code"] == "decorated_definition" for item in report["findings"])
+    assert not marker.exists()
+    assert report["functional_correctness"] == "not_evaluated"
+
+
+def test_return_in_class_method_is_not_defiler_return():
+    source = (
+        "def enfiler(file, valeur):\n    file.append(valeur)\n"
+        "def defiler(file):\n"
+        "    class Interne:\n        def method(self):\n            return 1\n"
+        "    Interne()\n"
+    )
+    assert any(item["code"] == "missing_return" for item in assess(source)["findings"])
