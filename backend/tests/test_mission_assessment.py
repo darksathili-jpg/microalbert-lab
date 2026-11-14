@@ -80,3 +80,47 @@ def test_return_in_class_method_is_not_defiler_return():
         "    Interne()\n"
     )
     assert any(item["code"] == "missing_return" for item in assess(source)["findings"])
+
+
+def test_top_level_side_effect_is_reported_but_not_executed(tmp_path):
+    marker = tmp_path / "side_effect"
+    source = (
+        f"__import__('pathlib').Path({str(marker)!r}).touch()\n"
+        "def enfiler(f, v):\n f.append(v)\n"
+        "def defiler(f):\n return f.pop(0)\n"
+    )
+    report = assess(source)
+    assert "top_level_effect" in {f["code"] for f in report["findings"]}
+    assert not marker.exists()
+    assert report["functional_correctness"] == "not_evaluated"
+
+
+def test_module_docstring_does_not_trigger_top_level_warning():
+    source = (
+        '"""Module de file."""\n'
+        "def enfiler(f, v):\n f.append(v)\n"
+        "def defiler(f):\n return f.pop(0)\n"
+    )
+    assert "top_level_effect" not in {f["code"] for f in assess(source)["findings"]}
+
+
+def test_dynamic_execution_is_detected_without_running(tmp_path):
+    marker = tmp_path / "dynamic"
+    source = (
+        "def enfiler(f, v):\n"
+        f" exec(\"open({str(marker)!r}, 'w').close()\")\n"
+        "def defiler(f):\n return f.pop(0)\n"
+    )
+    report = assess(source)
+    assert "dynamic_execution" in {f["code"] for f in report["findings"]}
+    assert not marker.exists()
+
+
+def test_nested_dynamic_execution_is_not_attributed_to_outer_function():
+    source = (
+        "def enfiler(f, v):\n"
+        " def inner():\n  eval('1+1')\n"
+        " f.append(v)\n"
+        "def defiler(f):\n return f.pop(0)\n"
+    )
+    assert "dynamic_execution" not in {f["code"] for f in assess(source)["findings"]}

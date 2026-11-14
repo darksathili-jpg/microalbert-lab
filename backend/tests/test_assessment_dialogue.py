@@ -52,3 +52,13 @@ def test_no_complete_code_or_claim_of_functional_correctness():
         assert "def enfiler" not in question
         assert "file.pop(" not in question
         assert "correct" not in question.lower()
+
+
+def test_dynamic_execution_question_has_no_code_or_solution():
+    report = assess_queue_submission(
+        "def enfiler(f, v):\n exec('pass')\ndef defiler(f):\n return None"
+    )
+    question, code = select_question(report)
+    assert code == "dynamic_execution"
+    assert question.endswith("?")
+    assert "exec(" not in question

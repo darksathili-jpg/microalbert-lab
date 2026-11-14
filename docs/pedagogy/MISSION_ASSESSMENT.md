@@ -13,3 +13,10 @@ Test ciblé : `cd backend && python -m pytest tests/test_mission_assessment.py -
 Un `return` placé uniquement dans une fonction imbriquée ou dans une méthode d'une classe interne ne constitue pas un `return` de `defiler` : le contrôle de structure ignore désormais ces faux positifs. En revanche, un `return` conditionnel compte comme présence syntaxique, **sans garantir que toutes les branches renvoient une valeur**. Les fonctions décorées sont signalées, car le décorateur peut changer leur comportement ou leur signature. L'analyseur n'exécute jamais le décorateur.
 
 Les constats restent des indices, jamais une note ni une preuve de conformité. Aucun accès élève n'est ouvert, aucun code soumis n'est exécuté, aucun appel Albert réel n'est déclenché. Tests de régression : `backend/tests/test_mission_assessment.py` et `backend/tests/test_secure_assessment.py`. Le déploiement doit rester conditionné à la réussite de la chaîne GitHub Actions et de Playwright.
+
+
+## Repérage des effets à l'import et de l'évaluation dynamique
+
+L'analyseur signale maintenant les instructions exécutables placées au premier niveau du fichier, en excluant la chaîne de documentation du module. Il repère aussi les appels directs à `eval`, `exec` et `compile` dans les fonctions attendues. Ces constats conduisent à des questions socratiques sur les effets observables et la nécessité d'exécuter du texte comme du code. Aucun de ces appels n'est exécuté pendant l'analyse.
+
+Ce contrôle est **heuristique et non une sandbox** : les appels indirects, les alias, les décorateurs et d'autres effets de bord peuvent échapper à l'analyse. Il ne doit jamais autoriser l'exécution du code d'un élève. Les tests de régression vérifient notamment qu'aucun fichier témoin n'est créé.
