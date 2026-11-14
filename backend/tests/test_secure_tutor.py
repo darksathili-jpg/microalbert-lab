@@ -72,3 +72,18 @@ def test_real_provider_rejects_invalid_origin(monkeypatch):
     monkeypatch.setenv("ALBERT_API_BASE_URL", "https://attacker.example")
     from app.main import get_tutor_adapter
     assert get_tutor_adapter() is None
+
+def test_tutor_rejects_unregistered_mission():
+    registry = LocalTokenRegistry()
+    teacher = registry.issue(Principal("teacher", "enseignant"))
+    app.dependency_overrides[get_secure_registry] = lambda: registry
+    app.dependency_overrides[get_secure_limiter] = lambda: FixedWindowRateLimiter(limit=20, window_seconds=60)
+    try:
+        with TestClient(app) as client:
+            request = body()
+            request["mission_id"] = "arbitrary_student_prompt"
+            response = client.post("/api/secure/tutor", json=request,
+                                   headers={"Authorization": "Bearer " + teacher})
+            assert response.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
