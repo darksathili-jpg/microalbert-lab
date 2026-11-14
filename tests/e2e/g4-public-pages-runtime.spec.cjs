@@ -25,6 +25,11 @@ test('G4 public : interface, trois thèmes et moteur Python réellement exécut�
  const desktopMascot=await page.locator('.mascot-panel').boundingBox();
  expect(desktopMascot.width).toBeLessThan(desktopStage.width*0.35);
  expect(desktopStage.width).toBeGreaterThan(800);
+ const heroPosition=await page.locator('.mascot-panel').evaluate(el=>getComputedStyle(el).position);
+ expect(heroPosition).toBe('sticky');
+ await page.evaluate(()=>window.scrollTo(0,500));
+ await expect.poll(()=>page.locator('.mascot-panel').evaluate(el=>el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
+ await page.evaluate(()=>window.scrollTo(0,0));
  await page.setViewportSize({width:390,height:844});
  await expect(page.locator('#student-heading')).toBeVisible();
  const mobileStage=await page.locator('.stage').boundingBox();
