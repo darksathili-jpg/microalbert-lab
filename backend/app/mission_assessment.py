@@ -1,6 +1,36 @@
 """Static, non-executing structural assessment; never certifies correctness."""
 import ast
 
+
+class _OwnReturnVisitor(ast.NodeVisitor):
+    """Inspect the current function, not returns in nested functions or lambdas."""
+
+    def __init__(self):
+        self.found = False
+
+    def visit_Return(self, node):
+        self.found = True
+
+    def visit_FunctionDef(self, node):
+        pass
+
+    def visit_AsyncFunctionDef(self, node):
+        pass
+
+    def visit_Lambda(self, node):
+        pass
+
+    def visit_ClassDef(self, node):
+        pass
+
+
+def _has_own_return(function):
+    visitor = _OwnReturnVisitor()
+    for statement in function.body:
+        visitor.visit(statement)
+    return visitor.found
+
+
 def assess_queue_submission(source: str) -> dict:
     if not isinstance(source, str) or not source.strip() or len(source) > 8000:
         raise ValueError("invalid_submission")
@@ -26,6 +56,8 @@ def assess_queue_submission(source: str) -> dict:
             note("async_definition", f"La mission demande-t-elle une fonction asynchrone pour {name} ?")
         else:
             evidence.append(f"definition:{name}")
+        if node.decorator_list:
+            note("decorated_definition", f"Quel effet les décorateurs ont-ils sur la fonction {name} ?")
         args = node.args
         if (len(args.posonlyargs) + len(args.args) != arity or args.vararg is not None
                 or args.kwarg is not None or args.kwonlyargs or args.defaults or args.kw_defaults):
@@ -36,7 +68,7 @@ def assess_queue_submission(source: str) -> dict:
                       and not (isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant))]
         if not executable:
             note("empty_body", f"Quelle instruction doit effectuer {name} ?")
-        if name == "defiler" and not any(isinstance(n, ast.Return) for n in ast.walk(node)):
+        if name == "defiler" and not _has_own_return(node):
             note("missing_return", "Quelle valeur defiler doit-elle renvoyer ?")
     return {"syntax_valid": True, "structural_evidence": evidence, "findings": findings,
             "functional_correctness": "not_evaluated"}
