@@ -56,3 +56,42 @@ def test_tutor_ignores_forged_client_counters_and_limits_hints():
         assert progress.snapshot("teacher", "file").hints_used == 3
     finally:
         app.dependency_overrides.clear()
+
+def test_progress_counters_are_capped_and_scoped():
+    store = TutorProgressStore(ttl_seconds=20, max_sessions=3, clock=lambda: 10.0)
+    for _ in range(110):
+        store.record("teacher", "file", hint_given=True)
+    assert store.snapshot("teacher", "file").attempts == 100
+    assert store.snapshot("teacher", "file").hints_used == 3
+    assert store.snapshot("teacher", "balises").attempts == 0
+    assert store.snapshot("other", "file").attempts == 0
+
+
+def test_progress_expiration_and_eviction_are_deterministic():
+    now = [10.0]
+    store = TutorProgressStore(ttl_seconds=5, max_sessions=2, clock=lambda: now[0])
+    store.record("a", "file", hint_given=True)
+    now[0] = 11.0
+    store.record("b", "file", hint_given=False)
+    now[0] = 12.0
+    store.record("c", "file", hint_given=False)
+    assert store.snapshot("a", "file").attempts == 0
+    assert store.snapshot("b", "file").attempts == 1
+    now[0] = 16.0
+    assert store.snapshot("b", "file").attempts == 0
+    assert store.snapshot("c", "file").attempts == 1
+    now[0] = 17.0
+    assert store.snapshot("c", "file").attempts == 0
+
+
+def test_progress_rejects_invalid_configuration_and_keys():
+    import pytest
+    with pytest.raises(ValueError):
+        TutorProgressStore(ttl_seconds=0)
+    with pytest.raises(ValueError):
+        TutorProgressStore(max_sessions=0)
+    store = TutorProgressStore()
+    with pytest.raises(ValueError):
+        store.record("", "file", hint_given=False)
+    with pytest.raises(ValueError):
+        store.snapshot("teacher", "")
