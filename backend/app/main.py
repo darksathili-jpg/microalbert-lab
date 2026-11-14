@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 from .albert_adapter import AlbertAdapter, ProviderConfig, ProviderError
 import httpx
 from .pedagogical_tutor import TutorContext, TutorAction, decide_tutor_action, tutor_system_instructions
+from .mission_assessment import assess_queue_submission
 from .tutor_progress import TutorProgressStore
 from .tutor_output_guard import review_tutor_output
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
@@ -233,4 +234,48 @@ async def secure_tutor(
         reply=review.reply, model_id=result.model_id,
         finish_reason=result.finish_reason, request_id=secrets.token_hex(8),
         warnings=warnings,
+    )
+
+
+class AssessmentRequest(BaseModel):
+    """Source Python submitted for static analysis only, never executed."""
+    mission_id: Literal["file"]
+    source: str = Field(min_length=1, max_length=8000)
+
+
+class AssessmentResponse(BaseModel):
+    syntax_valid: bool
+    structural_evidence: list[str]
+    findings: list[dict[str, str | None]]
+    functional_correctness: Literal["not_evaluated"]
+    next_question: str
+    warnings: list[str]
+
+
+@app.post("/api/secure/assessment", response_model=AssessmentResponse)
+def secure_assessment(
+    payload: AssessmentRequest,
+    principal: Principal = Depends(authenticated_principal),
+    limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
+):
+    """Teacher-only structural feedback. No provider, eval, exec or persisted source."""
+    try:
+        authorize(principal, "enseignant", "chat:review")
+        limiter.require(principal.subject)
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+    try:
+        report = assess_queue_submission(payload.source)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={
+            "code": "invalid_submission", "message": "Programme Python invalide"
+        }) from None
+    question = (report["findings"][0]["question"] if report["findings"] else
+                "Quels tests permettraient de vérifier le comportement de ta file, notamment lorsqu'elle est vide ?")
+    return AssessmentResponse(
+        **report, next_question=question,
+        warnings=["static_analysis_only", "functional_correctness_not_evaluated",
+                  "teacher_supervised_pilot", "no_student_code_execution"],
     )
