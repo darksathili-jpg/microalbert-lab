@@ -11,6 +11,7 @@ import httpx
 from .pedagogical_tutor import TutorContext, TutorAction, decide_tutor_action, tutor_system_instructions
 from .mission_assessment import assess_queue_submission
 from .assessment_dialogue import select_question
+from .assessment_history import AssessmentHistoryStore
 from .tutor_progress import TutorProgressStore
 from .tutor_output_guard import review_tutor_output
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
@@ -238,11 +239,19 @@ async def secure_tutor(
     )
 
 
+_assessment_history = AssessmentHistoryStore()
+
+
+def get_assessment_history() -> AssessmentHistoryStore:
+    return _assessment_history
+
+
 class AssessmentRequest(BaseModel):
     """Source Python submitted for static analysis only, never executed."""
     mission_id: Literal["file"]
     source: str = Field(min_length=1, max_length=8000)
     phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"] = "verification"
+    # Deprecated untrusted browser field: accepted for compatibility but ignored.
     previous_finding: str | None = Field(default=None, max_length=80)
 
 
@@ -261,6 +270,7 @@ def secure_assessment(
     payload: AssessmentRequest,
     principal: Principal = Depends(authenticated_principal),
     limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
+    history: AssessmentHistoryStore = Depends(get_assessment_history),
 ):
     """Teacher-only structural feedback. No provider, eval, exec or persisted source."""
     try:
@@ -276,7 +286,10 @@ def secure_assessment(
         raise HTTPException(status_code=422, detail={
             "code": "invalid_submission", "message": "Programme Python invalide"
         }) from None
-    question, finding_code = select_question(report, payload.phase, payload.previous_finding)
+    # The browser cannot select the next diagnosis or reset rotation.
+    question, finding_code = history.select_and_record(
+        principal.subject, payload.mission_id, report, payload.phase
+    )
     return AssessmentResponse(
         **report, next_question=question, finding_code=finding_code,
         warnings=["static_analysis_only", "functional_correctness_not_evaluated",
