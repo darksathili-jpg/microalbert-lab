@@ -2,9 +2,10 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import (app, get_secure_registry, get_secure_limiter,
-                      get_assessment_history)
+                      get_assessment_history, get_assessment_sessions)
 from app.access_security import LocalTokenRegistry, FixedWindowRateLimiter, Principal
 from app.assessment_history import AssessmentHistoryStore
+from app.assessment_sessions import AssessmentSessionStore
 
 BAD = "def enfiler(f, v):\n pass\ndef defiler(f):\n pass"
 GOOD = "def enfiler(f, v):\n f.append(v)\ndef defiler(f):\n return f.pop(0)"
@@ -15,7 +16,9 @@ def client_and_registry():
     app.dependency_overrides[get_secure_registry] = lambda: registry
     app.dependency_overrides[get_secure_limiter] = lambda: FixedWindowRateLimiter(limit=100)
     history = AssessmentHistoryStore()
+    sessions = AssessmentSessionStore()
     app.dependency_overrides[get_assessment_history] = lambda: history
+    app.dependency_overrides[get_assessment_sessions] = lambda: sessions
     try:
         with TestClient(app) as client:
             yield client, registry
@@ -23,9 +26,23 @@ def client_and_registry():
         app.dependency_overrides.clear()
 
 def post(client, token, source=BAD, **extra):
+    # A distinct authenticated capability is mandatory since the security hardening.
+    # Reuse the capability per token so longitudinal assertions remain meaningful.
+    if not hasattr(client, "_assessment_test_sessions"):
+        client._assessment_test_sessions = {}
+    if token not in client._assessment_test_sessions:
+        response = client.post(
+            "/api/secure/assessment/session",
+            headers={"Authorization": "Bearer " + token},
+            json={"mission_id": "file"},
+        )
+        if response.status_code != 200:
+            return response
+        client._assessment_test_sessions[token] = response.json()["session_id"]
     return client.post("/api/secure/assessment",
                        headers={"Authorization": "Bearer " + token},
-                       json={"mission_id": "file", "source": source, **extra})
+                       json={"mission_id": "file", "source": source,
+                             "session_id": client._assessment_test_sessions[token], **extra})
 
 def test_rotation_cannot_be_reset_or_injected_by_browser(client_and_registry):
     client, registry = client_and_registry
