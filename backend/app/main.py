@@ -255,6 +255,14 @@ class AssessmentRequest(BaseModel):
     previous_finding: str | None = Field(default=None, max_length=80)
 
 
+class AssessmentTrend(BaseModel):
+    attempts_observed: int
+    persistent_findings: list[str]
+    new_findings: list[str]
+    resolved_findings: list[str]
+    comparison_available: bool
+
+
 class AssessmentResponse(BaseModel):
     syntax_valid: bool
     structural_evidence: list[str]
@@ -262,6 +270,7 @@ class AssessmentResponse(BaseModel):
     functional_correctness: Literal["not_evaluated"]
     next_question: str
     finding_code: str | None = None
+    trend: AssessmentTrend
     warnings: list[str]
 
 
@@ -287,11 +296,11 @@ def secure_assessment(
             "code": "invalid_submission", "message": "Programme Python invalide"
         }) from None
     # The browser cannot select the next diagnosis or reset rotation.
-    question, finding_code = history.select_and_record(
+    question, finding_code, trend = history.select_record_with_trend(
         principal.subject, payload.mission_id, report, payload.phase
     )
     return AssessmentResponse(
-        **report, next_question=question, finding_code=finding_code,
+        **report, next_question=question, finding_code=finding_code, trend=trend,
         warnings=["static_analysis_only", "functional_correctness_not_evaluated",
                   "teacher_supervised_pilot", "no_student_code_execution"],
     )

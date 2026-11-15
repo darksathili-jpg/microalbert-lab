@@ -81,3 +81,52 @@ def test_invalid_configuration_and_key():
         AssessmentHistoryStore(max_sessions=0)
     with pytest.raises(ValueError):
         AssessmentHistoryStore().select_and_record("", "file", {}, "verification")
+
+
+def test_longitudinal_trend_tracks_evidence_not_correctness(client_and_registry):
+    client, registry = client_and_registry
+    token = registry.issue(Principal("teacher-trend", "enseignant"))
+    first = post(client, token, BAD).json()
+    assert first["trend"] == {
+        "attempts_observed": 1, "persistent_findings": [],
+        "new_findings": [], "resolved_findings": [],
+        "comparison_available": False,
+    }
+    second = post(client, token, BAD).json()
+    assert second["trend"]["persistent_findings"] == ["empty_body", "missing_return"]
+    assert second["trend"]["attempts_observed"] == 2
+    third = post(client, token, GOOD).json()
+    assert third["trend"]["resolved_findings"] == ["empty_body", "missing_return"]
+    assert third["functional_correctness"] == "not_evaluated"
+    assert third["trend"]["comparison_available"] is True
+    fourth = post(client, token, BAD).json()
+    assert fourth["trend"]["new_findings"] == ["empty_body", "missing_return"]
+    assert fourth["trend"]["attempts_observed"] == 4
+
+
+def test_trend_isolated_and_expires_without_storing_source():
+    clock = [0.0]
+    store = AssessmentHistoryStore(ttl_seconds=5, clock=lambda: clock[0])
+    bad = {"findings": [{"code": "missing_return"}]}
+    good = {"findings": []}
+    first = store.select_record_with_trend("teacher-a", "file", bad, "verification")[2]
+    assert not first["comparison_available"]
+    second = store.select_record_with_trend("teacher-a", "file", good, "verification")[2]
+    assert second["resolved_findings"] == ["missing_return"]
+    other = store.select_record_with_trend("teacher-b", "file", bad, "verification")[2]
+    assert not other["comparison_available"]
+    assert all(len(entry) == 4 for entry in store._entries.values())
+    assert all("def " not in str(entry) for entry in store._entries.values())
+    clock[0] = 6.0
+    expired = store.select_record_with_trend("teacher-a", "file", bad, "verification")[2]
+    assert expired["attempts_observed"] == 1
+    assert not expired["comparison_available"]
+
+
+def test_invalid_phase_does_not_advance_trend():
+    store = AssessmentHistoryStore()
+    report = {"findings": [{"code": "missing_return"}]}
+    with pytest.raises(ValueError):
+        store.select_record_with_trend("teacher", "file", report, "unknown")
+    assert not store._entries
+    assert store.select_record_with_trend("teacher", "file", report, "verification")[2]["attempts_observed"] == 1

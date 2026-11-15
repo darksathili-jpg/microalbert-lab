@@ -18,24 +18,45 @@ class AssessmentHistoryStore:
         self._clock = clock
         self._ttl = ttl_seconds
         self._capacity = max_sessions
-        self._entries: dict[tuple[str, str], tuple[str | None, float]] = {}
+        self._entries: dict[tuple[str, str], tuple[str | None, float, frozenset[str], int]] = {}
         self._lock = Lock()
 
     def select_and_record(self, subject: str, mission_id: str, report: dict,
                           phase: str) -> tuple[str, str | None]:
+        question, code, _ = self.select_record_with_trend(subject, mission_id, report, phase)
+        return question, code
+
+    def select_record_with_trend(self, subject: str, mission_id: str, report: dict,
+                                 phase: str) -> tuple[str, str | None, dict]:
+        """Compare two authenticated attempts; never infer functional correctness."""
         if not subject or not mission_id:
             raise ValueError("invalid_assessment_history_key")
         with self._lock:
             now = self._clock()
-            for key, (_, timestamp) in list(self._entries.items()):
+            for key, entry in list(self._entries.items()):
+                timestamp = entry[1]
                 if now - timestamp >= self._ttl:
                     del self._entries[key]
             key = (subject, mission_id)
-            previous = self._entries.get(key, (None, 0))[0]
+            previous_entry = self._entries.get(key)
+            previous = previous_entry[0] if previous_entry else None
+            previous_codes = previous_entry[2] if previous_entry else frozenset()
+            previous_count = previous_entry[3] if previous_entry else 0
+            current_codes = frozenset(finding['code'] for finding in report.get('findings', [])
+                                      if isinstance(finding, dict)
+                                      and isinstance(finding.get('code'), str))
             # No state mutation if report or phase is invalid.
             question, code = select_question(report, phase, previous)
             if key not in self._entries and len(self._entries) >= self._capacity:
                 oldest = min(self._entries, key=lambda k: self._entries[k][1])
                 del self._entries[oldest]
-            self._entries[key] = (code, now)
-            return question, code
+            count = min(previous_count + 1, 20)
+            self._entries[key] = (code, now, current_codes, count)
+            trend = {
+                'attempts_observed': count,
+                'persistent_findings': sorted(current_codes & previous_codes) if previous_entry else [],
+                'new_findings': sorted(current_codes - previous_codes) if previous_entry else [],
+                'resolved_findings': sorted(previous_codes - current_codes) if previous_entry else [],
+                'comparison_available': previous_entry is not None,
+            }
+            return question, code, trend
