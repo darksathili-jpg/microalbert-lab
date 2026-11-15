@@ -39,6 +39,11 @@ def select_question(report: dict, phase: Phase = "verification",
     findings = report.get("findings", [])
     codes = {finding.get("code") for finding in findings
              if isinstance(finding, dict) and finding.get("code") in FOLLOW_UP}
+    # Conceptual phases must ask about the concept, not prescribe debugging.
+    # Preserve the selected diagnostic code for teacher-only observation.
+    if phase in ("decouverte", "recherche", "bilan"):
+        code = next((candidate for candidate in PRIORITY if candidate in codes), None)
+        return PHASE_QUESTIONS[phase], code
     for code in PRIORITY:
         if code in codes and code != previous_finding:
             return FOLLOW_UP[code], code
