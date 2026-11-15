@@ -35,3 +35,10 @@ reste nécessaire. Aucun appel Albert réel n'est requis par ce lot.
 
 La validation de livraison exige les suites Python, frontend et Playwright,
 plus les vérifications visuelles du héros et de l'interface approuvée.
+
+
+## Obligation de session (durcissement)
+
+Chaque appel `POST /api/secure/assessment` exige désormais un `session_id` opaque obtenu par `POST /api/secure/assessment/session` avec l'identité enseignante authentifiée. Une requête sans ce champ est rejetée (422) avant analyse du programme ; une session inconnue, révoquée, expirée ou étrangère est rejetée (403) avant analyse. L'historique est isolé par identité enseignante, mission et session. L'ancien historique partagé sans session n'est plus accessible par cette route. La révocation demeure disponible via `POST /api/secure/assessment/session/revoke`.
+
+Cette protection ne constitue **pas** une authentification des élèves. L'API reste un pilote enseignant local ; aucune clé Albert ne doit être exposée dans GitHub Pages. Les identifiants de session ne doivent pas être consignés dans les journaux ou publiés. L'expiration est gérée en mémoire du processus, sans persistance. Aucun accès élève ni appel réel à Albert n'est autorisé par cette modification.
