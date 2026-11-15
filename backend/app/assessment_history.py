@@ -56,15 +56,21 @@ class AssessmentHistoryStore:
             persistent = current_codes & previous_codes if previous_entry else frozenset()
             introduced = current_codes - previous_codes if previous_entry else frozenset()
             resolved = previous_codes - current_codes if previous_entry else frozenset()
-            if previous_entry and not current_codes and resolved:
-                question = ("Quels tests pourrais-tu maintenant construire pour vérifier "
-                            "que le comportement de ton programme correspond à la consigne, "
-                            "y compris dans les cas limites ?")
-                code = None
-            elif previous_entry and count >= 3 and persistent and not introduced and code in persistent:
-                question = ("Cette difficulté apparaît encore dans ton programme. "
-                            "Quel petit exemple pourrais-tu examiner pas à pas pour "
-                            "comprendre ce qui se produit, sans modifier tout le code ?")
+            # The teaching phase is authoritative: do not turn an introductory
+            # exchange into code-debugging feedback. Escalation is reserved for
+            # implementation and verification, where a concrete attempt exists.
+            if phase in ("implementation", "verification"):
+                if previous_entry and not current_codes and resolved:
+                    question = ("Quels tests pourrais-tu maintenant construire pour vérifier "
+                                "que le comportement de ton programme correspond à la consigne, "
+                                "y compris dans les cas limites ?")
+                    code = None
+                elif previous_entry and count >= 3 and persistent and not introduced and code in persistent:
+                    question = ("Cette difficulté apparaît encore dans ton programme. "
+                                "Quel petit exemple pourrais-tu examiner pas à pas pour "
+                                "comprendre ce qui se produit, sans modifier tout le code ?")
+            # Never assert success from a clean structural report.
+            # A previous finding is not evidence of functional correctness.
             self._entries[key] = (code, now, current_codes, count)
             trend = {
                 'attempts_observed': count,
