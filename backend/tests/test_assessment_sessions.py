@@ -2,7 +2,8 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.assessment_sessions import AssessmentSessionStore
-from app.main import app, get_secure_registry, get_secure_limiter, get_assessment_sessions
+from app.main import app, get_secure_registry, get_secure_limiter, get_assessment_sessions, get_assessment_history
+from app.assessment_history import AssessmentHistoryStore
 from app.access_security import LocalTokenRegistry, FixedWindowRateLimiter, Principal
 
 
@@ -67,5 +68,69 @@ def test_secure_session_endpoint_and_isolated_assessments():
             assert assess(headers_a, two).json()["trend"]["attempts_observed"] == 1
             assert assess(headers_b, one).status_code == 403
             assert assess(headers_a, "forged").status_code == 403
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_invalid_capability_rejected_before_static_analysis(monkeypatch):
+    """A forged session cannot make the backend inspect submitted source."""
+    registry = LocalTokenRegistry()
+    sessions = AssessmentSessionStore()
+    history = AssessmentHistoryStore()
+    app.dependency_overrides[get_secure_registry] = lambda: registry
+    app.dependency_overrides[get_secure_limiter] = lambda: FixedWindowRateLimiter(limit=100)
+    app.dependency_overrides[get_assessment_sessions] = lambda: sessions
+    app.dependency_overrides[get_assessment_history] = lambda: history
+    try:
+        import app.main as main
+        def forbidden_analysis(source):
+            raise AssertionError("source parsed before session validation")
+        monkeypatch.setattr(main, "assess_queue_submission", forbidden_analysis)
+        with TestClient(app) as client:
+            teacher = registry.issue(Principal("teacher-a", "enseignant"))
+            headers = {"Authorization": "Bearer " + teacher}
+            response = client.post("/api/secure/assessment", headers=headers, json={
+                "mission_id": "file", "session_id": "forged",
+                "source": "def dangerous():\\n    pass"
+            })
+            assert response.status_code == 403
+            assert response.json()["detail"]["code"] == "invalid_assessment_session"
+            assert not history._entries
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_revoke_endpoint_enforces_owner_and_invalidates_session():
+    registry = LocalTokenRegistry()
+    sessions = AssessmentSessionStore()
+    app.dependency_overrides[get_secure_registry] = lambda: registry
+    app.dependency_overrides[get_secure_limiter] = lambda: FixedWindowRateLimiter(limit=100)
+    app.dependency_overrides[get_assessment_sessions] = lambda: sessions
+    try:
+        with TestClient(app) as client:
+            a = registry.issue(Principal("teacher-a", "enseignant"))
+            b = registry.issue(Principal("teacher-b", "enseignant"))
+            student = registry.issue(Principal("student", "eleve"))
+            ha = {"Authorization": "Bearer " + a}
+            hb = {"Authorization": "Bearer " + b}
+            hs = {"Authorization": "Bearer " + student}
+            issue = client.post("/api/secure/assessment/session", headers=ha,
+                                json={"mission_id": "file"})
+            assert issue.status_code == 200
+            token = issue.json()["session_id"]
+            url = "/api/secure/assessment/session/revoke"
+            payload = {"session_id": token}
+            assert client.post(url, json=payload).status_code == 401
+            assert client.post(url, headers=hs, json=payload).status_code == 403
+            assert client.post(url, headers=hb, json=payload).status_code == 200
+            assert sessions.validate(token, "teacher-a", "file")
+            assert client.post(url, headers=ha, json=payload).status_code == 200
+            assert not sessions.validate(token, "teacher-a", "file")
+            assert client.post(url, headers=ha, json=payload).status_code == 200
+            response = client.post("/api/secure/assessment", headers=ha, json={
+                "mission_id": "file", "session_id": token,
+                "source": "def enfiler(f,v):\\n pass"
+            })
+            assert response.status_code == 403
     finally:
         app.dependency_overrides.clear()
