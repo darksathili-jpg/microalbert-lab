@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './TeacherTraining.css';
 import PythonEditor from './PythonEditor';
 
 type Activity = {
@@ -57,7 +58,7 @@ export default function TeacherTraining() {
     setResult(undefined);
   }
 
-  return <section className="python-lab" aria-labelledby="teacher-training">
+  return <section className="python-lab teacher-training" aria-labelledby="teacher-training">
     <h3 id="teacher-training">Exercices inspirés d’annales</h3>
     <p>Le pilote local analyse la structure du programme et suit les tentatives par session. L’accès requiert un jeton enseignant émis par le serveur.</p>
     <p id="teacher-training-token-help">Utilisez uniquement le jeton temporaire du pilote local.</p>

@@ -1,0 +1,14 @@
+.teacher-training {
+  min-inline-size: 0;
+}
+
+.teacher-training input,
+.teacher-training select {
+  display: block;
+  max-inline-size: 100%;
+  font: inherit;
+}
+
+.teacher-training a {
+  overflow-wrap: anywhere;
+}

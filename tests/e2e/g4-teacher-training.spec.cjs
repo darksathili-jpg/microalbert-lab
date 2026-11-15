@@ -31,6 +31,7 @@ test('le pilote affiche deux activités et compare des tentatives par session', 
       trend: { attempts_observed: example.attempt, resolved_findings: Array(example.resolved_diagnostics).fill('code') },
     } });
   });
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('http://127.0.0.1:5173/');
   await page.getByRole('button', { name:'Enseignant', exact:true }).click();
   await page.getByLabel('Jeton du pilote enseignant').fill('faux-jeton-de-test');
@@ -51,4 +52,8 @@ test('le pilote affiche deux activités et compare des tentatives par session', 
   await page.getByRole('button', { name:'Analyser la tentative' }).click();
   await expect(page.getByRole('heading', { name:'Tentative 1' })).toBeVisible();
   await expect(page.getByText(/salles_accessibles.*renvoyer/)).toBeVisible();
+  for (const theme of ['light', 'dark', 'projector']) {
+    await page.getByLabel('Affichage :').selectOption(theme);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+  }
 });
