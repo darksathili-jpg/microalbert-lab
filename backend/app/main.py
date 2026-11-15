@@ -274,6 +274,29 @@ def create_assessment_session(
     return AssessmentSessionResponse(session_id=sessions.issue(principal.subject, payload.mission_id))
 
 
+class AssessmentSessionRevokeRequest(BaseModel):
+    session_id: str = Field(min_length=1, max_length=256)
+
+
+@app.post("/api/secure/assessment/session/revoke")
+def revoke_assessment_session(
+    payload: AssessmentSessionRevokeRequest,
+    principal: Principal = Depends(authenticated_principal),
+    limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
+    sessions: AssessmentSessionStore = Depends(get_assessment_sessions),
+):
+    try:
+        authorize(principal, "enseignant", "chat:review")
+        limiter.require(principal.subject)
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+    # Deliberately identical response for absent and foreign capabilities.
+    sessions.revoke(payload.session_id, principal.subject)
+    return {"revoked": True}
+
+
 def get_assessment_history() -> AssessmentHistoryStore:
     return _assessment_history
 
@@ -324,14 +347,8 @@ def secure_assessment(
         raise HTTPException(status_code=exc.status, detail={
             "code": exc.code, "message": "Accès refusé"
         }) from None
-    try:
-        report = assess_queue_submission(payload.source)
-    except ValueError:
-        raise HTTPException(status_code=422, detail={
-            "code": "invalid_submission", "message": "Programme Python invalide"
-        }) from None
-    # An opaque server-issued session isolates parallel attempts under one teacher.
-    # Legacy teacher-only calls remain supported but must not be used for pupils.
+    # Validate the capability before inspecting any untrusted Python source.
+    # The legacy path remains teacher-only until existing clients are migrated.
     history_subject = principal.subject
     if payload.session_id is not None:
         if not sessions.validate(payload.session_id, principal.subject, payload.mission_id):
@@ -339,6 +356,12 @@ def secure_assessment(
                 "code": "invalid_assessment_session", "message": "Accès refusé"
             })
         history_subject = principal.subject + ":session:" + payload.session_id
+    try:
+        report = assess_queue_submission(payload.source)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={
+            "code": "invalid_submission", "message": "Programme Python invalide"
+        }) from None
     question, finding_code, trend = history.select_record_with_trend(
         history_subject, payload.mission_id, report, payload.phase
     )
