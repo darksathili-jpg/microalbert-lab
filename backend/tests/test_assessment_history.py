@@ -214,3 +214,39 @@ def test_clean_report_does_not_imply_correctness_in_discovery():
     assert "cas limites" not in question
     assert code is None
     assert trend["resolved_findings"] == ["missing_return"]
+
+
+@pytest.mark.parametrize("phase,fragment", [
+    ("decouverte", "premier entré"),
+    ("recherche", "opérations"),
+    ("bilan", "pile"),
+])
+def test_conceptual_phases_use_conceptual_questions_even_with_diagnostics(phase, fragment):
+    store = AssessmentHistoryStore()
+    report = {"findings": [{"code": "syntax"}, {"code": "missing_return"}]}
+    for _ in range(4):
+        question, code, trend = store.select_record_with_trend(
+            "teacher", "file", report, phase)
+        assert fragment in question
+        assert "ligne signalée" not in question
+        assert "petit exemple" not in question
+        assert code == "syntax"
+    assert trend["attempts_observed"] == 4
+    assert trend["persistent_findings"] == ["missing_return", "syntax"]
+
+
+def test_implementation_still_provides_specific_diagnostic_question():
+    store = AssessmentHistoryStore()
+    question, code, _ = store.select_record_with_trend(
+        "teacher", "file", {"findings": [{"code": "syntax"}]}, "implementation")
+    assert code == "syntax"
+    assert "ligne" in question
+
+
+def test_conceptual_phase_with_clean_report_does_not_claim_success():
+    store = AssessmentHistoryStore()
+    question, code, trend = store.select_record_with_trend(
+        "teacher", "file", {"findings": []}, "bilan")
+    assert "pile" in question
+    assert code is None
+    assert trend["comparison_available"] is False
