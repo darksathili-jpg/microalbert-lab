@@ -9,3 +9,9 @@ Le pilote reste réservé à l'enseignant : aucun accès élève, aucune exécut
 ## Adaptation du dialogue après plusieurs tentatives
 
 À partir de la troisième tentative observée, si un diagnostic persiste sans nouveau diagnostic et qu'il est sélectionné, le serveur propose une question métacognitive invitant à examiner un petit exemple pas à pas. Lorsqu'un diagnostic disparaît et qu'aucun autre n'est détecté, il invite à construire des tests, notamment sur les cas limites. Un nouveau diagnostic conserve la priorité des questions spécifiques. Aucune de ces situations ne constitue une preuve de correction fonctionnelle, et aucun corrigé n'est fourni. La sélection s'appuie uniquement sur l'historique du serveur, sans nouvel accès élève ni appel à Albert.
+
+## Respect de la phase pédagogique
+
+La relance métacognitive après trois observations d'une même difficulté et l'invitation à construire des tests après disparition des diagnostics sont réservées aux phases `implementation` et `verification`. Les phases `decouverte`, `recherche` et `bilan` conservent leurs questions propres : le tuteur ne doit pas imposer un débogage alors que l'élève découvre le problème ou fait un bilan. La détection des anomalies reste disponible pour l'enseignant, mais aucun diagnostic ne certifie la correction du programme.
+
+Les tests de régression couvrent les cinq phases, les changements de diagnostic et l'absence de validation fonctionnelle. Les tests doivent réussir dans GitHub Actions avant de considérer cette version publiable.
