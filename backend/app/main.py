@@ -12,6 +12,7 @@ from .pedagogical_tutor import TutorContext, TutorAction, decide_tutor_action, t
 from .mission_assessment import assess_queue_submission
 from .assessment_dialogue import select_question
 from .assessment_history import AssessmentHistoryStore
+from .assessment_sessions import AssessmentSessionStore
 from .tutor_progress import TutorProgressStore
 from .tutor_output_guard import review_tutor_output
 from .access_security import AccessDenied, FixedWindowRateLimiter, LocalTokenRegistry, Principal, authorize
@@ -240,6 +241,37 @@ async def secure_tutor(
 
 
 _assessment_history = AssessmentHistoryStore()
+_assessment_sessions = AssessmentSessionStore()
+
+
+def get_assessment_sessions() -> AssessmentSessionStore:
+    return _assessment_sessions
+
+
+class AssessmentSessionRequest(BaseModel):
+    mission_id: Literal["file"]
+
+
+class AssessmentSessionResponse(BaseModel):
+    session_id: str
+    expires_in_seconds: int = 1800
+
+
+@app.post("/api/secure/assessment/session", response_model=AssessmentSessionResponse)
+def create_assessment_session(
+    payload: AssessmentSessionRequest,
+    principal: Principal = Depends(authenticated_principal),
+    limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
+    sessions: AssessmentSessionStore = Depends(get_assessment_sessions),
+):
+    try:
+        authorize(principal, "enseignant", "chat:review")
+        limiter.require(principal.subject)
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+    return AssessmentSessionResponse(session_id=sessions.issue(principal.subject, payload.mission_id))
 
 
 def get_assessment_history() -> AssessmentHistoryStore:
@@ -253,6 +285,8 @@ class AssessmentRequest(BaseModel):
     phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"] = "verification"
     # Deprecated untrusted browser field: accepted for compatibility but ignored.
     previous_finding: str | None = Field(default=None, max_length=80)
+    # Optional during teacher-only migration; required before any multi-student pilot.
+    session_id: str | None = Field(default=None, max_length=256)
 
 
 class AssessmentTrend(BaseModel):
@@ -280,6 +314,7 @@ def secure_assessment(
     principal: Principal = Depends(authenticated_principal),
     limiter: FixedWindowRateLimiter = Depends(get_secure_limiter),
     history: AssessmentHistoryStore = Depends(get_assessment_history),
+    sessions: AssessmentSessionStore = Depends(get_assessment_sessions),
 ):
     """Teacher-only structural feedback. No provider, eval, exec or persisted source."""
     try:
@@ -295,12 +330,21 @@ def secure_assessment(
         raise HTTPException(status_code=422, detail={
             "code": "invalid_submission", "message": "Programme Python invalide"
         }) from None
-    # The browser cannot select the next diagnosis or reset rotation.
+    # An opaque server-issued session isolates parallel attempts under one teacher.
+    # Legacy teacher-only calls remain supported but must not be used for pupils.
+    history_subject = principal.subject
+    if payload.session_id is not None:
+        if not sessions.validate(payload.session_id, principal.subject, payload.mission_id):
+            raise HTTPException(status_code=403, detail={
+                "code": "invalid_assessment_session", "message": "Accès refusé"
+            })
+        history_subject = principal.subject + ":session:" + payload.session_id
     question, finding_code, trend = history.select_record_with_trend(
-        principal.subject, payload.mission_id, report, payload.phase
+        history_subject, payload.mission_id, report, payload.phase
     )
     return AssessmentResponse(
         **report, next_question=question, finding_code=finding_code, trend=trend,
         warnings=["static_analysis_only", "functional_correctness_not_evaluated",
-                  "teacher_supervised_pilot", "no_student_code_execution"],
+                  "teacher_supervised_pilot", "no_student_code_execution"]
+                 + (["legacy_shared_teacher_history"] if payload.session_id is None else []),
     )
