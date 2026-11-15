@@ -130,3 +130,52 @@ def test_invalid_phase_does_not_advance_trend():
         store.select_record_with_trend("teacher", "file", report, "unknown")
     assert not store._entries
     assert store.select_record_with_trend("teacher", "file", report, "verification")[2]["attempts_observed"] == 1
+
+def test_persistent_difficulty_prompts_metacognitive_step():
+    store = AssessmentHistoryStore()
+    report = {"findings": [{"code": "missing_return"}]}
+    first = store.select_record_with_trend("teacher", "file", report, "verification")
+    second = store.select_record_with_trend("teacher", "file", report, "verification")
+    third = store.select_record_with_trend("teacher", "file", report, "verification")
+    assert first[1] == second[1] == third[1] == "missing_return"
+    assert "petit exemple" in third[0]
+    assert third[2]["persistent_findings"] == ["missing_return"]
+    assert third[2]["attempts_observed"] == 3
+
+
+def test_resolved_findings_prompt_for_functional_tests_not_success():
+    store = AssessmentHistoryStore()
+    bad = {"findings": [{"code": "missing_return"}]}
+    clean = {"findings": []}
+    store.select_record_with_trend("teacher", "file", bad, "verification")
+    question, code, trend = store.select_record_with_trend("teacher", "file", clean, "verification")
+    assert code is None
+    assert "tests" in question
+    assert "cas limites" in question
+    assert trend["resolved_findings"] == ["missing_return"]
+    assert trend["comparison_available"] is True
+
+
+def test_new_difficulty_keeps_specific_socratic_question():
+    store = AssessmentHistoryStore()
+    store.select_record_with_trend("teacher", "file",
+                                   {"findings": [{"code": "missing_return"}]}, "verification")
+    for _ in range(2):
+        store.select_record_with_trend("teacher", "file",
+                                      {"findings": [{"code": "missing_return"}]}, "verification")
+    question, code, trend = store.select_record_with_trend(
+        "teacher", "file",
+        {"findings": [{"code": "syntax"}, {"code": "missing_return"}]}, "verification")
+    assert code == "syntax"
+    assert "ligne" in question
+    assert trend["new_findings"] == ["syntax"]
+
+
+def test_no_cross_teacher_metacognitive_escalation():
+    store = AssessmentHistoryStore()
+    report = {"findings": [{"code": "missing_return"}]}
+    for _ in range(3):
+        store.select_record_with_trend("teacher-a", "file", report, "verification")
+    question, _, trend = store.select_record_with_trend("teacher-b", "file", report, "verification")
+    assert "petit exemple" not in question
+    assert trend["attempts_observed"] == 1
