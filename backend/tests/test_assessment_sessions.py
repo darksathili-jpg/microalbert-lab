@@ -134,3 +134,52 @@ def test_revoke_endpoint_enforces_owner_and_invalidates_session():
             assert response.status_code == 403
     finally:
         app.dependency_overrides.clear()
+
+
+def test_missing_session_is_rejected_and_cannot_touch_analyzer(monkeypatch):
+    """Legacy requests must not enter analysis or create shared history."""
+    registry = LocalTokenRegistry()
+    history = AssessmentHistoryStore()
+    app.dependency_overrides[get_secure_registry] = lambda: registry
+    app.dependency_overrides[get_secure_limiter] = lambda: FixedWindowRateLimiter(limit=100)
+    app.dependency_overrides[get_assessment_history] = lambda: history
+    try:
+        import app.main as main
+        monkeypatch.setattr(main, "assess_queue_submission",
+                            lambda source: (_ for _ in ()).throw(
+                                AssertionError("unauthorized source inspected")))
+        with TestClient(app) as client:
+            token = registry.issue(Principal("teacher-a", "enseignant"))
+            response = client.post("/api/secure/assessment",
+                headers={"Authorization": "Bearer " + token},
+                json={"mission_id": "file", "source": "def enfiler(f,v): pass"})
+            assert response.status_code == 422
+            assert not history._entries
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_session_isolation_same_teacher_no_legacy_warning():
+    registry = LocalTokenRegistry()
+    sessions = AssessmentSessionStore()
+    history = AssessmentHistoryStore()
+    app.dependency_overrides[get_secure_registry] = lambda: registry
+    app.dependency_overrides[get_secure_limiter] = lambda: FixedWindowRateLimiter(limit=100)
+    app.dependency_overrides[get_assessment_sessions] = lambda: sessions
+    app.dependency_overrides[get_assessment_history] = lambda: history
+    try:
+        with TestClient(app) as client:
+            token = registry.issue(Principal("teacher-a", "enseignant"))
+            headers = {"Authorization": "Bearer " + token}
+            one = sessions.issue("teacher-a", "file")
+            two = sessions.issue("teacher-a", "file")
+            for session_id, expected in ((one, 1), (one, 2), (two, 1)):
+                response = client.post("/api/secure/assessment", headers=headers, json={
+                    "mission_id": "file", "session_id": session_id,
+                    "source": "def enfiler(f, v):\n    pass\ndef defiler(f):\n    pass"
+                })
+                assert response.status_code == 200
+                assert response.json()["trend"]["attempts_observed"] == expected
+                assert "legacy_shared_teacher_history" not in response.json()["warnings"]
+    finally:
+        app.dependency_overrides.clear()
