@@ -62,3 +62,28 @@ test('G4 public : interface, trois thèmes et moteur Python réellement exécut�
  await page.getByRole('button',{name:'Arrêter l’exécution'}).click();
  await expect(page.getByRole('status').filter({hasText:'Exécution arrêtée'})).toBeVisible();
 });
+
+test('Pages : les deux exercices d’annales et les tentatives sont visibles sans service distant', async ({ page }) => {
+ const requests = [];
+ page.on('request', request => {
+  const url = new URL(request.url());
+  if (url.origin !== 'http://127.0.0.1:5180' || url.pathname.startsWith('/api/')) requests.push(url.href);
+ });
+ await page.goto('./');
+ await page.getByText('Voir les deux exercices inspirés d’annales', { exact: true }).click();
+ await expect(page.getByRole('heading', { name: 'Totaliser des mesures au-dessus d’un seuil' })).toBeVisible();
+ await expect(page.getByRole('heading', { name: 'Tentative 1' })).toBeVisible();
+ await expect(page.getByRole('link', { name: /G1SNSIN03316/ })).toBeVisible();
+ await expect(page.getByText(/Quelle instruction doit effectuer total_seuil/).first()).toBeVisible();
+ await page.getByRole('button', { name: 'Voir la tentative révisée' }).click();
+ await expect(page.getByRole('heading', { name: 'Tentative 2' })).toBeVisible();
+ await expect(page.getByText(/Diagnostics structurels disparus/)).toBeVisible();
+ await expect(page.getByText('Comportement du programme non évalué.')).toBeVisible();
+ await page.getByRole('button', { name: 'Terminale' }).click();
+ await expect(page.getByRole('heading', { name: 'Explorer les salles accessibles' })).toBeVisible();
+ await expect(page.getByRole('link', { name: /26-NSIJ1ME1/ })).toBeVisible();
+ await expect(page.getByRole('heading', { name: 'Tentative 1' })).toBeVisible();
+ await expect(page.getByText(/Aucun appel à Albert\./)).toBeVisible();
+ await expect(page.getByLabel('Jeton du pilote enseignant')).toHaveCount(0);
+ expect(requests).toEqual([]);
+});

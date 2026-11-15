@@ -23,3 +23,28 @@ Pour chaque nouvelle activité, vérifier le niveau et la notion dans le program
 4. Lire la question posée et les éléments observés. La valeur `not_evaluated` indique qu’il reste à vérifier le comportement du programme. Les cas proposés aident à concevoir ces tests.
 
 Le pilote utilise une analyse syntaxique et structurelle de Python et des questions déterministes. Les tests automatisés couvrent les deux niveaux, la provenance, un scénario en trois tentatives, la séparation des sessions et les refus d’accès. Ils vérifient qu’une structure plausible ne suffit pas à valider le comportement. Les PDF et les corrigés de référence restent hors du dépôt et de la version publique.
+
+## Voir les activités dans le navigateur
+
+Dans la [démonstration GitHub Pages](https://darksathili-jpg.github.io/microalbert-lab/),
+ouvre **Voir les deux exercices inspirés d’annales**, choisis le niveau, puis
+compare les deux tentatives fictives. Le build contrôle que ces exemples sont
+générés depuis le catalogue et l’analyseur Python. Il s’agit d’une démonstration
+statique. Le navigateur ne soumet aucun programme au serveur et n’appelle pas Albert.
+
+Pour essayer l’analyse d’un programme dans l’espace **Enseignant**, démarre le
+pilote de démonstration sur la machine de recette, avec des données fictives.
+Depuis la racine du dépôt et après installation des dépendances :
+
+```bash
+PYTHONPATH=backend .venv/bin/python -m app.local_teacher_pilot
+npm run dev --prefix frontend
+```
+
+Dans la version locale du site, ouvre **Enseignant**, copie le jeton de
+démonstration du terminal dans le champ masqué de l’espace Enseignant, charge
+les exercices et ouvre une session. Modifie le squelette et analyse plusieurs
+tentatives. Le jeton temporaire identifie le pilote local. La clé Albert
+n’est jamais demandée dans l’interface. Ce serveur écoute uniquement sur
+`127.0.0.1` et utilise le port 8000. L’accès établissement et la conversation
+réelle avec Albert nécessitent une recette séparée.

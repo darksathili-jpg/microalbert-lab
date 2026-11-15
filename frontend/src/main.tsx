@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
 import PythonLab from './PythonLab';
+import TeacherTraining from './TeacherTraining';
 
 type Mode = 'eleve' | 'enseignant' | 'audit';
 // Build pilote : aucun espace Enseignant/Audit ni appel au simulateur dans l'interface.
@@ -50,6 +51,7 @@ function App() {
      {!STUDENT_STAGING&&mode==='enseignant'&&<section aria-labelledby="teacher-heading">
       <h2 id="teacher-heading" className="mode-heading">Espace Enseignant <span className="mode-status">Préparation — prototype</span></h2>
       <p className="mode-intro">Prévisualiser une activité et son cadre pédagogique. L'édition, la sauvegarde et la publication d'activités ne sont pas encore disponibles.</p>
+      <TeacherTraining/>
       <div className="role-grid">
        <section className="role-card"><h3>Activité de référence</h3><dl><dt>Niveau</dt><dd>Première NSI</dd><dt>Notion</dt><dd>Boucle bornée avec <code>for</code></dd><dt>Objectif</dt><dd>Identifier les valeurs parcourues par <code>range</code> et prévoir l'affichage d'un programme.</dd></dl><h4>Consigne proposée</h4><p>Écrivez une boucle bornée affichant les nombres pairs de 2 à 10 inclus.</p></section>
        <section className="role-card"><h3>Repères pour l'enseignant</h3><p><strong>Résultat attendu :</strong> 2, 4, 6, 8, 10.</p><pre className="python-code"><code><span className="py-keyword">for</span>{' nombre '}<span className="py-keyword">in</span>{' '}<span className="py-function">range</span>{'('}<span className="py-number">2</span>{', '}<span className="py-number">11</span>{', '}<span className="py-number">2</span>{'):'}{'\n    '}<span className="py-function">print</span>{'(nombre)'}</code></pre><p className="small">Exemple de correction statique à vérifier avant utilisation en classe.</p></section>

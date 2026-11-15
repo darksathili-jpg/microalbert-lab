@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './style.css';
 import PythonLab from './PythonLab';
+import TrainingPreview from './TrainingPreview';
 
 type Theme='light'|'dark'|'projector';
 function App(){
@@ -21,6 +22,7 @@ function App(){
    <main className="workspace"><section className="sheet"><section aria-labelledby="student-heading">
     <h2 id="student-heading" className="mode-heading">Espace Élève <span className="mode-status">Pilote élèves — non certifié</span></h2>
     <p className="mode-intro">Expérimenter avec Python dans le navigateur. Ne saisissez aucune donnée personnelle. Aucun appel à Albert API n'est activé.</p>
+    <TrainingPreview/>
     <PythonLab/>
    </section></section></main>
   </div>

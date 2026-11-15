@@ -17,7 +17,7 @@ bundles=list((dist/"assets").glob("*.js")) if (dist/"assets").exists() else []
 if not bundles:
     errors.append("Bundle JavaScript absent.")
 source="\n".join(p.read_text(encoding="utf-8",errors="replace") for p in bundles)
-for token in ["Interroger le simulateur","Repères pour l’enseignant","Espace Audit","Espace Enseignant","/api/chat","microalbert-mock"]:
+for token in ["Interroger le simulateur","Repères pour l’enseignant","Espace Audit","Espace Enseignant","/api/chat","/api/secure/","Jeton du pilote enseignant","microalbert-mock"]:
     if token in source:
         errors.append("Contenu interdit détecté dans le bundle public : "+token)
 if not (dist/"pyodide"/"pyodide.js").exists():
