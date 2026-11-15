@@ -308,8 +308,8 @@ class AssessmentRequest(BaseModel):
     phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"] = "verification"
     # Deprecated untrusted browser field: accepted for compatibility but ignored.
     previous_finding: str | None = Field(default=None, max_length=80)
-    # Optional during teacher-only migration; required before any multi-student pilot.
-    session_id: str | None = Field(default=None, max_length=256)
+    # Mandatory opaque capability: never merge separate learners under a teacher identity.
+    session_id: str = Field(min_length=1, max_length=256)
 
 
 class AssessmentTrend(BaseModel):
@@ -348,14 +348,12 @@ def secure_assessment(
             "code": exc.code, "message": "Accès refusé"
         }) from None
     # Validate the capability before inspecting any untrusted Python source.
-    # The legacy path remains teacher-only until existing clients are migrated.
-    history_subject = principal.subject
-    if payload.session_id is not None:
-        if not sessions.validate(payload.session_id, principal.subject, payload.mission_id):
-            raise HTTPException(status_code=403, detail={
-                "code": "invalid_assessment_session", "message": "Accès refusé"
-            })
-        history_subject = principal.subject + ":session:" + payload.session_id
+    # A valid teacher-owned capability is mandatory before parsing submitted source.
+    if not sessions.validate(payload.session_id, principal.subject, payload.mission_id):
+        raise HTTPException(status_code=403, detail={
+            "code": "invalid_assessment_session", "message": "Accès refusé"
+        })
+    history_subject = principal.subject + ":session:" + payload.session_id
     try:
         report = assess_queue_submission(payload.source)
     except ValueError:
@@ -368,6 +366,5 @@ def secure_assessment(
     return AssessmentResponse(
         **report, next_question=question, finding_code=finding_code, trend=trend,
         warnings=["static_analysis_only", "functional_correctness_not_evaluated",
-                  "teacher_supervised_pilot", "no_student_code_execution"]
-                 + (["legacy_shared_teacher_history"] if payload.session_id is None else []),
+                  "teacher_supervised_pilot", "no_student_code_execution"],
     )
