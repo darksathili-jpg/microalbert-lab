@@ -8,6 +8,7 @@ from threading import Lock
 from time import monotonic
 
 from .assessment_dialogue import select_question
+from .training_catalog import TRAINING_MISSIONS
 
 
 class AssessmentHistoryStore:
@@ -46,7 +47,7 @@ class AssessmentHistoryStore:
                                       if isinstance(finding, dict)
                                       and isinstance(finding.get('code'), str))
             # No state mutation if report or phase is invalid.
-            question, code = select_question(report, phase, previous)
+            question, code = select_question(report, phase, previous, mission=TRAINING_MISSIONS.get(mission_id))
             if key not in self._entries and len(self._entries) >= self._capacity:
                 oldest = min(self._entries, key=lambda k: self._entries[k][1])
                 del self._entries[oldest]

@@ -10,14 +10,15 @@ from app.access_security import LocalTokenRegistry, FixedWindowRateLimiter, Prin
 def test_session_is_opaque_bound_and_expires():
     clock = [0.0]
     store = AssessmentSessionStore(ttl_seconds=10, clock=lambda: clock[0])
-    token = store.issue("teacher-a", "file")
+    token = store.issue("enseignant-é", "file")
     assert len(token) >= 32
-    assert store.validate(token, "teacher-a", "file")
+    assert store.validate(token, "enseignant-é", "file")
     assert not store.validate(token, "teacher-b", "file")
-    assert not store.validate(token, "teacher-a", "balises")
+    assert not store.validate(token, "enseignant-é", "balises")
     assert not store.validate("invalid", "teacher-a", "file")
+    assert not store.validate("invalide-é", "teacher-a", "file")
     clock[0] = 10.0
-    assert not store.validate(token, "teacher-a", "file")
+    assert not store.validate(token, "enseignant-é", "file")
 
 
 def test_capacity_revoke_and_invalid_configuration():
@@ -68,6 +69,7 @@ def test_secure_session_endpoint_and_isolated_assessments():
             assert assess(headers_a, two).json()["trend"]["attempts_observed"] == 1
             assert assess(headers_b, one).status_code == 403
             assert assess(headers_a, "forged").status_code == 403
+            assert assess(headers_a, "forgé").status_code == 403
     finally:
         app.dependency_overrides.clear()
 

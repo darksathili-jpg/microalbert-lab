@@ -34,9 +34,19 @@ jobs:
       - name: Tester le backend Albert et les contrôles d'accès
         run: |
           python -m pip install -r backend/requirements.txt
-          PYTHONPATH=backend python -m pytest -q backend/tests
+          PYTHONPATH=backend python -m pytest -q backend/tests tests/test_teacher_guide.py tests/pedagogie
       - name: Installer frontend
         run: npm ci --prefix frontend
+      - name: Installer le banc de tests navigateur
+        run: npm install --no-save --no-package-lock
+      - name: Installer Chromium pour la recette
+        run: npx playwright install --with-deps chromium
+      - name: Compiler la version standard
+        run: npm run build --prefix frontend
+      - name: Tester la version standard
+        run: npx playwright test --config=playwright.standard.config.cjs
+      - name: Tester la variante de préproduction
+        run: npx playwright test --config=playwright.student-staging.config.cjs --workers=1
       - name: Sélectionner explicitement l'entrée publique
         run: |
           cp frontend/index-public.html frontend/index.html
@@ -59,10 +69,6 @@ jobs:
         run: python3 scripts/check_staging_artifacts.py
       - name: Vérifier le périmètre du bundle public
         run: python3 scripts/check_public_demo.py
-      - name: Installer le banc de tests navigateur
-        run: npm install --no-save --no-package-lock
-      - name: Installer Chromium pour la recette
-        run: npx playwright install --with-deps chromium
       - name: Tester le véritable build GitHub Pages
         run: npx playwright test --config=playwright.public-pages.config.cjs
       - name: Préserver les journaux de test en cas d'échec
@@ -75,6 +81,8 @@ jobs:
             playwright-report/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Identifier le commit validé dans le site
+        run: printf '%s\n' "$GITHUB_SHA" > frontend/dist/revision.txt
       - name: Préparer les artefacts GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
@@ -99,11 +107,13 @@ jobs:
           SITE="https://darksathili-jpg.github.io/microalbert-lab/"
           for attempt in $(seq 1 12); do
             echo "Contrôle du site publié — tentative ${attempt}/12"
-            if curl --fail --location --silent --show-error --max-time 15 "$SITE" -o /tmp/microalbert-live.html; then
+            if LIVE_SHA=$(curl --fail --location --silent --show-error --max-time 15 "${SITE}revision.txt?sha=${GITHUB_SHA}") &&
+               [[ "$LIVE_SHA" == "$GITHUB_SHA" ]] &&
+               curl --fail --location --silent --show-error --max-time 15 "$SITE" -o /tmp/microalbert-live.html; then
               ASSET=$(grep -oE 'src="/microalbert-lab/assets/[^"]+\.js"' /tmp/microalbert-live.html | head -n 1 | cut -d '"' -f 2 || true)
               if [[ -n "$ASSET" ]] && curl --fail --location --silent --show-error --max-time 15 "https://darksathili-jpg.github.io$ASSET" -o /tmp/microalbert-live.js; then
                 if grep -q 'student-heading' /tmp/microalbert-live.js && curl --fail --location --silent --show-error --max-time 15 "${SITE}pyodide/pyodide.js" -o /dev/null; then
-                  echo "Site public, JavaScript et moteur Pyodide accessibles."
+                  echo "Site public au commit ${GITHUB_SHA}, JavaScript et moteur Pyodide accessibles."
                   exit 0
                 fi
               fi

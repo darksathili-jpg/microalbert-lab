@@ -48,20 +48,19 @@ class AssessmentSessionStore:
             return token
 
     def validate(self, token: str, owner: str, mission_id: str) -> bool:
-        if not token or len(token) > 256 or not owner or not mission_id:
+        if not token or len(token) > 256 or not token.isascii() or not owner or not mission_id:
             return False
         with self._lock:
             self._expire(self._clock())
             for stored, entry in self._entries.items():
                 if hmac.compare_digest(token, stored):
-                    return (hmac.compare_digest(entry.owner, owner)
-                            and hmac.compare_digest(entry.mission_id, mission_id))
+                    return entry.owner == owner and entry.mission_id == mission_id
             return False
 
     def revoke(self, token: str, owner: str) -> bool:
         with self._lock:
             entry = self._entries.get(token)
-            if entry is None or not hmac.compare_digest(entry.owner, owner):
+            if entry is None or entry.owner != owner:
                 return False
             del self._entries[token]
             return True

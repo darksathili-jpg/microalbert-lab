@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field, field_validator
 from .albert_adapter import AlbertAdapter, ProviderConfig, ProviderError
 import httpx
 from .pedagogical_tutor import TutorContext, TutorAction, decide_tutor_action, tutor_system_instructions
-from .mission_assessment import assess_queue_submission
-from .assessment_dialogue import select_question
+from .mission_assessment import assess_queue_submission, assess_submission
+from .training_catalog import TRAINING_MISSIONS, TrainingMissionId
 from .assessment_history import AssessmentHistoryStore
 from .assessment_sessions import AssessmentSessionStore
 from .tutor_progress import TutorProgressStore
@@ -248,8 +248,47 @@ def get_assessment_sessions() -> AssessmentSessionStore:
     return _assessment_sessions
 
 
+AssessmentMissionId = Literal["file"] | TrainingMissionId
+
+
+class TrainingActivityResponse(BaseModel):
+    mission_id: TrainingMissionId
+    title: str
+    level: Literal["Première", "Terminale"]
+    source_reference: str
+    source_url: str
+    statement: str
+    starter_code: str
+    checks_to_design: tuple[str, ...]
+
+
+@app.get("/api/secure/assessment/activities", response_model=list[TrainingActivityResponse])
+def list_training_activities(
+    principal: Principal = Depends(authenticated_principal),
+):
+    try:
+        authorize(principal, "enseignant", "chat:review")
+    except AccessDenied as exc:
+        raise HTTPException(status_code=exc.status, detail={
+            "code": exc.code, "message": "Accès refusé"
+        }) from None
+    return [
+        TrainingActivityResponse(
+            mission_id=mission_id,
+            title=mission.title,
+            level=mission.level,
+            source_reference=mission.source_reference,
+            source_url=mission.source_url,
+            statement=mission.statement,
+            starter_code=mission.starter_code,
+            checks_to_design=mission.checks_to_design,
+        )
+        for mission_id, mission in TRAINING_MISSIONS.items()
+    ]
+
+
 class AssessmentSessionRequest(BaseModel):
-    mission_id: Literal["file"]
+    mission_id: AssessmentMissionId
 
 
 class AssessmentSessionResponse(BaseModel):
@@ -303,7 +342,7 @@ def get_assessment_history() -> AssessmentHistoryStore:
 
 class AssessmentRequest(BaseModel):
     """Source Python submitted for static analysis only, never executed."""
-    mission_id: Literal["file"]
+    mission_id: AssessmentMissionId
     source: str = Field(min_length=1, max_length=8000)
     phase: Literal["decouverte", "recherche", "implementation", "verification", "bilan"] = "verification"
     # Deprecated untrusted browser field: accepted for compatibility but ignored.
@@ -355,7 +394,11 @@ def secure_assessment(
         })
     history_subject = principal.subject + ":session:" + payload.session_id
     try:
-        report = assess_queue_submission(payload.source)
+        if payload.mission_id == "file":
+            report = assess_queue_submission(payload.source)
+        else:
+            mission = TRAINING_MISSIONS[payload.mission_id]
+            report = assess_submission(payload.source, (mission.function,))
     except ValueError:
         raise HTTPException(status_code=422, detail={
             "code": "invalid_submission", "message": "Programme Python invalide"

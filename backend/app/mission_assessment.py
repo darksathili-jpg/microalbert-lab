@@ -1,6 +1,8 @@
 """Static, non-executing structural assessment; never certifies correctness."""
 import ast
 
+from .training_catalog import FunctionRequirement
+
 
 class _OwnReturnVisitor(ast.NodeVisitor):
     """Inspect the current function, not returns in nested functions or lambdas."""
@@ -62,7 +64,17 @@ def _uses_dynamic_execution(function):
     return visitor.found
 
 
+QUEUE_FUNCTIONS = (
+    FunctionRequirement("enfiler", 2, returns_value=False),
+    FunctionRequirement("defiler", 1),
+)
+
+
 def assess_queue_submission(source: str) -> dict:
+    return assess_submission(source, QUEUE_FUNCTIONS)
+
+
+def assess_submission(source: str, functions: tuple[FunctionRequirement, ...]) -> dict:
     if not isinstance(source, str) or not source.strip() or len(source) > 8000:
         raise ValueError("invalid_submission")
     try:
@@ -102,7 +114,8 @@ def assess_queue_submission(source: str) -> dict:
     if any(definition_time_risk(node) for node in tree.body):
         findings.append({"code": "definition_time_effect", "function": None,
                          "question": "Que peut exécuter Python au moment de définir une fonction ou une classe ?"})
-    for name, arity in (("enfiler", 2), ("defiler", 1)):
+    for function in functions:
+        name, arity = function.name, function.arity
         matches = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name]
         def note(code, question):
             findings.append({"code": code, "function": name, "question": question})
@@ -131,7 +144,7 @@ def assess_queue_submission(source: str) -> dict:
                       and not (isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant))]
         if not executable:
             note("empty_body", f"Quelle instruction doit effectuer {name} ?")
-        if name == "defiler" and not _has_own_return(node):
-            note("missing_return", "Quelle valeur defiler doit-elle renvoyer ?")
+        if function.returns_value and not _has_own_return(node):
+            note("missing_return", f"Quelle valeur {name} doit-elle renvoyer ?")
     return {"syntax_valid": True, "structural_evidence": evidence, "findings": findings,
             "functional_correctness": "not_evaluated"}

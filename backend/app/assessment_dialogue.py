@@ -1,6 +1,8 @@
 """Deterministic Socratic assessment dialogue; never executes submitted Python."""
 from typing import Literal
 
+from .training_catalog import TrainingMission
+
 Phase = Literal["decouverte", "recherche", "implementation", "verification", "bilan"]
 
 PHASE_QUESTIONS = {
@@ -28,13 +30,15 @@ PRIORITY = ("syntax", "top_level_effect", "definition_time_effect", "dynamic_exe
 
 
 def select_question(report: dict, phase: Phase = "verification",
-                    previous_finding: str | None = None) -> tuple[str, str | None]:
+                    previous_finding: str | None = None, *,
+                    mission: TrainingMission | None = None) -> tuple[str, str | None]:
     """Return (question, finding_code) without trusting a client-supplied diagnosis.
 
     The previous finding is only a preference to diversify questions; the
     current report remains the sole authority for observable findings.
     """
-    if phase not in PHASE_QUESTIONS:
+    questions = mission.phase_questions if mission else PHASE_QUESTIONS
+    if phase not in questions:
         raise ValueError("invalid_phase")
     findings = report.get("findings", [])
     codes = {finding.get("code") for finding in findings
@@ -43,11 +47,20 @@ def select_question(report: dict, phase: Phase = "verification",
     # Preserve the selected diagnostic code for teacher-only observation.
     if phase in ("decouverte", "recherche", "bilan"):
         code = next((candidate for candidate in PRIORITY if candidate in codes), None)
-        return PHASE_QUESTIONS[phase], code
+        return questions[phase], code
     for code in PRIORITY:
         if code in codes and code != previous_finding:
-            return FOLLOW_UP[code], code
+            return _diagnostic_question(code, findings, mission), code
     for code in PRIORITY:
         if code in codes:
-            return FOLLOW_UP[code], code
-    return PHASE_QUESTIONS[phase], None
+            return _diagnostic_question(code, findings, mission), code
+    return questions[phase], None
+
+
+def _diagnostic_question(code: str, findings: list, mission: TrainingMission | None) -> str:
+    if mission:
+        return next(
+            finding["question"] for finding in findings
+            if isinstance(finding, dict) and finding.get("code") == code
+        )
+    return FOLLOW_UP[code]

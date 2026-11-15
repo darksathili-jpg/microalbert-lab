@@ -12,3 +12,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+
+# Generated local browser/runtime assets
+frontend/public/pyodide/
+/artifacts/
