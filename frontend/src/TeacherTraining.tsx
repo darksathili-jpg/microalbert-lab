@@ -9,7 +9,6 @@ type Activity = {
   statement: string;
   starter_code: string;
   source_reference: string;
-  source_url: string;
   checks_to_design: string[];
 };
 
@@ -88,7 +87,7 @@ export default function TeacherTraining() {
     </>}
     {activity && <>
       <p>{activity.statement}</p>
-      <p><a href={activity.source_url} target="_blank" rel="noreferrer">{activity.source_reference}</a></p>
+      <p className="lab-notice">Exercice original inspiré du sujet {activity.source_reference}.</p>
       <ul>{activity.checks_to_design.map(check => <li key={check}>{check}</li>)}</ul>
       <div className="lab-actions"><button type="button" disabled={busy} onClick={() => void run(async () => {
         const opened = await request<{ session_id: string }>('/session', { mission_id: mission });

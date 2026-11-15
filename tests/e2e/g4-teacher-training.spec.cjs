@@ -5,11 +5,17 @@ test('le pilote affiche deux activités et compare des tentatives par session', 
   const catalog = preview.map(entry => ({
     mission_id: entry.id, level: entry.level, title: entry.title, statement: entry.statement,
     starter_code: entry.examples[0].source, source_reference: entry.reference,
-    source_url: entry.url, checks_to_design: entry.checks,
+    source_url: 'https://example.invalid/annale.pdf', checks_to_design: entry.checks,
   }));
   let mission;
   let calls = 0;
   let sessionNumber = 0;
+  const externalRequests = [];
+  await page.route('**/*', route => {
+    if (new URL(route.request().url()).origin === 'http://127.0.0.1:5173') return route.continue();
+    externalRequests.push(route.request().url());
+    return route.abort();
+  });
   await page.route('**/api/secure/assessment**', route => {
     const request = route.request();
     expect(request.headers().authorization).toBe('Bearer faux-jeton-de-test');
@@ -52,6 +58,9 @@ test('le pilote affiche deux activités et compare des tentatives par session', 
   await page.getByRole('button', { name:'Analyser la tentative' }).click();
   await expect(page.getByRole('heading', { name:'Tentative 1' })).toBeVisible();
   await expect(page.getByText(/salles_accessibles.*renvoyer/)).toBeVisible();
+  await expect(page.getByText(/Exercice original inspiré du sujet 26-NSIJ1ME1/)).toBeVisible();
+  await expect(page.locator('.teacher-training a[href]')).toHaveCount(0);
+  expect(externalRequests).toEqual([]);
   for (const theme of ['light', 'dark', 'projector']) {
     await page.getByLabel('Affichage :').selectOption(theme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);

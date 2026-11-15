@@ -7,6 +7,17 @@ Les activités MicroAlbert sont des adaptations originales de compétences obser
 | Première | Totaliser des mesures au-dessus d’un seuil | Épreuve commune de contrôle continu (E3C), `G1SNSIN03316`, thème F, question F.6, p. 16, dans `E3C.zip/sujet-A-1.pdf`. La question demande d’interpréter une accumulation conditionnelle dans une boucle bornée. L’activité demande de programmer et tester une accumulation par seuil, avec un contexte, des données et une condition différents. [Sujet de référence](https://ccbac.fr/sujets/2020/G/2/NSIN/001/G1SNSIN03316-sujet1.pdf) |
 | Terminale | Explorer les salles accessibles | Bac 2026, Métropole jour 1, `26-NSIJ1ME1`, exercice 2, questions 9 à 11, p. 10. Le sujet mobilise un parcours en profondeur et la justification du choix d’un parcours. L’activité transpose ces notions à un graphe de salles, fixe l’ordre de première visite et ajoute des tests sur un cycle. Le bilan demande un choix de parcours argumenté. [Sujet de référence](https://www.math93.com/images/pdf/annales_bac/Bac_NSI/bac_NSI_2026/NSI_Epreuve_Ecrite-2026/26_NSIJ1ME1.pdf) |
 
+## Autonomie des exercices
+
+Les énoncés, squelettes, questions, tentatives de démonstration et cas de test
+font partie du catalogue versionné et sont disponibles dans MicroAlbert.
+L’écran affiche le repère bibliographique (code, question, page). Les URL
+des annales restent des références documentaires facultatives. Le site ne
+charge aucun PDF, script, image ou autre ressource externe pour ces activités.
+La recette navigateur valide les deux niveaux avec les requêtes externes bloquées.
+Appliquer cette règle aux prochains exercices et héberger dans le dépôt les
+ressources nécessaires à leur exécution.
+
 ## Sources des prochains lots
 
 - **Première.** L’archive fournie contient 250 PDF distincts, dont 249 couvertures indiquent « Première » et portent un repère distinct. Le fichier `sujet-0.pdf` est un sujet zéro. La référence de l’archive est l’empreinte SHA-256 `e340975a399a147ac529fda7d5f29995d190dbf7eb82c608042030cd916b467e`. Ces évaluations historiques servent à repérer les notions et les raisonnements. Le cadrage du niveau s’appuie sur le programme en vigueur. [Éduscol](https://eduscol.education.gouv.fr/5823/programmes-et-ressources-en-numerique-et-sciences-informatiques-voie-g)

@@ -5,7 +5,6 @@
     "level": "Première",
     "statement": "La fonction total_seuil(mesures, seuil) reçoit une liste de nombres entiers et un seuil de type entier. Elle renvoie la somme des mesures supérieures ou égales au seuil, en comptant chaque occurrence. Si aucune mesure ne convient, elle renvoie 0. La liste reçue doit rester inchangée.",
     "reference": "G1SNSIN03316 · sujet-A-1.pdf · thème F, question F.6 · p. 16",
-    "url": "https://ccbac.fr/sujets/2020/G/2/NSIN/001/G1SNSIN03316-sujet1.pdf",
     "checks": [
       "Liste vide et liste non vide sans mesure retenue.",
       "Mesure égale au seuil, valeurs en dessous et au-dessus du seuil.",
@@ -37,7 +36,6 @@
     "level": "Terminale",
     "statement": "Un graphe orienté est représenté par un dictionnaire dont chaque clé est une salle et chaque valeur la liste ordonnée de ses voisines accessibles en un déplacement. Toutes les salles figurent parmi les clés. Écris la fonction salles_accessibles(graphe, depart) qui renvoie la liste des salles visitées par un parcours en profondeur d’abord, dans l’ordre de la première visite et en suivant l’ordre des voisines du dictionnaire. Le départ appartient au graphe. Chaque salle doit apparaître une seule fois, même en présence d’un cycle. Le graphe reçu doit rester inchangé.",
     "reference": "26-NSIJ1ME1 · exercice 2, questions 9 à 11 · p. 10",
-    "url": "https://www.math93.com/images/pdf/annales_bac/Bac_NSI/bac_NSI_2026/NSI_Epreuve_Ecrite-2026/26_NSIJ1ME1.pdf",
     "checks": [
       "Un sommet isolé, choisi comme point de départ.",
       "Un cycle et un sommet sans chemin depuis le départ.",

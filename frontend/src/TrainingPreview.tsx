@@ -17,7 +17,7 @@ export default function TrainingPreview() {
     </div>
     <h3>{activity.title}</h3>
     <p>{activity.statement}</p>
-    <p><a href={activity.url} target="_blank" rel="noreferrer">Sujet de référence · {activity.reference}</a></p>
+    <p className="lab-notice">Exercice original inspiré du sujet {activity.reference}.</p>
     <div className="lab-actions">
       <button type="button" onClick={() => setAttempt(1)} disabled={attempt === 1}>Voir la tentative révisée</button>
       <button type="button" onClick={() => setAttempt(0)} disabled={attempt === 0}>Revenir à la première tentative</button>

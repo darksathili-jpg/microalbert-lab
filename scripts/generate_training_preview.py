@@ -31,7 +31,6 @@ def build_preview():
             "level": mission.level,
             "statement": mission.statement,
             "reference": mission.source_reference,
-            "url": mission.source_url,
             "checks": mission.checks_to_design,
             "examples": examples,
         })
