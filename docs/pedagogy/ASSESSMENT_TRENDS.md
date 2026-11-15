@@ -15,3 +15,9 @@ Le pilote reste réservé à l'enseignant : aucun accès élève, aucune exécut
 La relance métacognitive après trois observations d'une même difficulté et l'invitation à construire des tests après disparition des diagnostics sont réservées aux phases `implementation` et `verification`. Les phases `decouverte`, `recherche` et `bilan` conservent leurs questions propres : le tuteur ne doit pas imposer un débogage alors que l'élève découvre le problème ou fait un bilan. La détection des anomalies reste disponible pour l'enseignant, mais aucun diagnostic ne certifie la correction du programme.
 
 Les tests de régression couvrent les cinq phases, les changements de diagnostic et l'absence de validation fonctionnelle. Les tests doivent réussir dans GitHub Actions avant de considérer cette version publiable.
+
+## Correction du dialogue conceptuel
+
+Même lorsque l'analyse statique détecte une anomalie, les phases `decouverte`, `recherche` et `bilan` utilisent désormais la question conceptuelle propre à leur phase. Le code de diagnostic demeure visible pour l'enseignant, mais il ne déclenche plus une consigne de débogage pendant ces phases. Les phases `implementation` et `verification` conservent les questions ciblées sur le programme. Les tests couvrent ces deux comportements et un rapport sans anomalie.
+
+**Limite de confidentialité du pilote :** l'historique est indexé par enseignant et mission, pas par élève. Un enseignant ne doit donc pas utiliser cette progression pour comparer plusieurs élèves distincts : leurs tentatives seraient mélangées. L'ouverture multi-élèves exige une authentification institutionnelle, un identifiant de session opaque émis par le serveur et une isolation démontrée par des tests. Le site GitHub Pages ne fournit ni ce service ni un serveur Albert HTTPS.
