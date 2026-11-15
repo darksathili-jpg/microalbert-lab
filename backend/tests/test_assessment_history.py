@@ -179,3 +179,38 @@ def test_no_cross_teacher_metacognitive_escalation():
     question, _, trend = store.select_record_with_trend("teacher-b", "file", report, "verification")
     assert "petit exemple" not in question
     assert trend["attempts_observed"] == 1
+
+
+@pytest.mark.parametrize("phase", ["decouverte", "recherche", "bilan"])
+def test_non_coding_phases_never_escalate_to_debugging(phase):
+    store = AssessmentHistoryStore()
+    report = {"findings": [{"code": "missing_return"}]}
+    for _ in range(4):
+        question, code, trend = store.select_record_with_trend(
+            "teacher", "file", report, phase)
+    assert "petit exemple" not in question
+    assert trend["attempts_observed"] == 4
+    assert code == "missing_return"
+
+
+@pytest.mark.parametrize("phase", ["implementation", "verification"])
+def test_coding_phases_keep_metacognitive_escalation(phase):
+    store = AssessmentHistoryStore()
+    report = {"findings": [{"code": "missing_return"}]}
+    for _ in range(3):
+        question, code, trend = store.select_record_with_trend(
+            "teacher", "file", report, phase)
+    assert "petit exemple" in question
+    assert code == "missing_return"
+    assert trend["persistent_findings"] == ["missing_return"]
+
+
+def test_clean_report_does_not_imply_correctness_in_discovery():
+    store = AssessmentHistoryStore()
+    bad = {"findings": [{"code": "missing_return"}]}
+    store.select_record_with_trend("teacher", "file", bad, "decouverte")
+    question, code, trend = store.select_record_with_trend(
+        "teacher", "file", {"findings": []}, "decouverte")
+    assert "cas limites" not in question
+    assert code is None
+    assert trend["resolved_findings"] == ["missing_return"]
