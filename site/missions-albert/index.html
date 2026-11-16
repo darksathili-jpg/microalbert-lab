@@ -33,7 +33,7 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <body>
 <main>
 <header><p><a href="../index.html">← Retour aux 150 défis Python</a></p><p class="subtitle">MICROALBERT LAB · PROTOTYPE ISOLÉ · SNT</p><h1>Les missions d'Albert</h1>
-<p>Huit missions progressives pour apprendre à programmer les déplacements d’Albert et récupérer des puces d’intelligence artificielle (IA). Départ (0, 2), objectif (2, 1).</p></header>
+<p>Seize missions progressives pour apprendre à programmer les déplacements d’Albert et récupérer des puces d’intelligence artificielle (IA). Départ (0, 2), objectif (2, 1).</p></header>
 <div class="layout">
 <section aria-label="Terrain de jeu"><label for="mission-select">Choisir une mission</label><select id="mission-select" style="display:block;width:100%;padding:.65rem;margin:.5rem 0 1rem;border:1px solid #657c9c;border-radius:8px"></select><p id="mission-progress"></p><h2 id="mission-title">Le laboratoire</h2><p id="mission-notion"></p><p id="mission-goal"></p><div id="board" class="board" aria-label="Grille de quatre colonnes et trois lignes"></div>
 <p id="feedback" role="status" aria-live="polite">Albert attend vos instructions.</p>
@@ -43,12 +43,13 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <label for="program">Instructions de déplacement</label>
 <textarea id="program" spellcheck="false"></textarea>
 <div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
-<p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, boucles bornées et affectations d’entiers). Il n’exécute pas encore du Python général avec Pyodide.</p>
+<p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, conditions if / elif / else, boucles bornées et affectations). Il n’exécute pas encore du Python général avec Pyodide.</p>
 <p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
 </div></main>
 <script type="module">
 import { executerMission } from './moteur.mjs';
 import { MISSIONS_SNT } from './parcours-snt.mjs';
+import { interpreterProgramme } from './interpreteur.mjs';
 const board=document.querySelector('#board'), feedback=document.querySelector('#feedback');
 const missionTitle=document.querySelector('#mission-title'),missionNotion=document.querySelector('#mission-notion'),missionGoal=document.querySelector('#mission-goal'),missionHelp=document.querySelector('#mission-help');
 const missionSelect=document.querySelector('#mission-select'),nextMission=document.querySelector('#next-mission'),progress=document.querySelector('#mission-progress');
@@ -185,40 +186,6 @@ function cancelEffects(){
   activeEffects=[];
   board.querySelectorAll('.absorb-chip,.absorb-aura').forEach(el=>el.remove());
 }
-function parse(source){
-  const raw=source.replace(/\r/g,'').split('\n');
-  const vars=new Map(),commands=[];
-  let hasLoop=false,hasVariable=false;
-  function block(start,indent,end,depth){
-    if(depth>4)throw Error('Trop de boucles imbriquées.');
-    for(let i=start;i<end;){
-      const line=raw[i],text=line.trim(),spaces=line.match(/^ */)[0].length;
-      if(!text||text.startsWith('#')){i++;continue;}
-      if(spaces!==indent)throw Error('Indentation incorrecte à la ligne '+(i+1)+'.');
-      const assignment=/^([a-zA-Z_][a-zA-Z_0-9]*)\s*=\s*(\d+)$/.exec(text);
-      if(assignment){vars.set(assignment[1],Number(assignment[2]));hasVariable=true;i++;continue;}
-      const loop=/^for\s+([a-zA-Z_][a-zA-Z_0-9]*)\s+in\s+range\((\d+|[a-zA-Z_][a-zA-Z_0-9]*)\):$/.exec(text);
-      if(loop){
-        hasLoop=true;const count=/^\d+$/.test(loop[2])?Number(loop[2]):vars.get(loop[2]);
-        if(!Number.isInteger(count)||count<0||count>mission.limiteInstructions)throw Error('Nombre de répétitions invalide à la ligne '+(i+1)+'.');
-        let j=i+1;while(j<end&&(!raw[j].trim()||raw[j].match(/^ */)[0].length>indent))j++;
-        const child=raw.slice(i+1,j).find(l=>l.trim()&&!l.trim().startsWith('#'));
-        if(!child)throw Error('Boucle vide à la ligne '+(i+1)+'.');
-        const childIndent=child.match(/^ */)[0].length;
-        if(childIndent<=indent)throw Error('Le corps de la boucle doit être indenté.');
-        for(let k=0;k<count;k++)block(i+1,childIndent,j,depth+1);
-        i=j;continue;
-      }
-      const command=/^albert\.(avancer|tourner_gauche|tourner_droite)\(\)$/.exec(text);
-      if(!command)throw Error('Instruction non reconnue à la ligne '+(i+1)+'.');
-      commands.push(command[1]);
-      if(commands.length>mission.limiteInstructions)throw Error('Limite de '+mission.limiteInstructions+' déplacements dépassée.');
-      i++;
-    }
-  }
-  block(0,0,raw.length,0);
-  return {commands,hasLoop,hasVariable};
-}
 function chargerMission(n){
   generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;
   indexMission=n;
@@ -248,10 +215,11 @@ program.addEventListener('input',()=>localStorage.setItem('microalbert-snt-code-
 async function play(){
   const token=++generation;run.disabled=true;feedback.textContent='Exécution en cours…';
   try{
-    const parsed=parse(program.value);
+    const parsed=interpreterProgramme(program.value,mission.limiteInstructions);
     const item=MISSIONS_SNT[indexMission];
     if(item.exigeBoucle&&!parsed.hasLoop)throw Error('Cette mission demande une boucle bornée for.');
     if(item.exigeVariable&&!parsed.hasVariable)throw Error('Cette mission demande une affectation à une variable de type entier.');
+    if(item.exigeCondition&&!parsed.hasCondition)throw Error('Cette mission demande une structure conditionnelle if.');
     const result=executerMission(mission,parsed.commands);
     draw(result.trace[0]);
     for(let i=1;i<result.trace.length;i++){
