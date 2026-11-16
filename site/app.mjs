@@ -222,7 +222,7 @@ function route() {
   if (active) stopWorker("Exécution arrêtée lors du changement de défi.");
   current = selected;
   const resume = current.id ? "defi-" + pad(current.id) : "console-libre";
-  for (const link of document.querySelectorAll("[data-help-link]")) {
+  for (const link of document.querySelectorAll("#albert-help-link, [data-help-link]")) {
     const address = new URL(link.href);
     address.searchParams.set("retour", resume);
     link.href = address.href;

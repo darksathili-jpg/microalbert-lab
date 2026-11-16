@@ -59,7 +59,7 @@
   .help-top .help-link { padding-inline: .5rem; }
 }
 
-@media (max-width: 475px) {
+@media (max-width: 510px) {
   .top-inner:has(.atelier-actions) { flex-wrap: wrap; padding-block: .55rem; gap: .45rem; }
   .atelier-actions { flex-wrap: wrap; }
   .atelier-actions .help-link, .atelier-actions #nav-toggle { padding-inline: .57rem; }

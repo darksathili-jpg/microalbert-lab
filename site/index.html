@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="./microalbert.css">
 <link rel="stylesheet" href="./editeur-python.css">
 <link rel="stylesheet" href="./aide-albert.css">
-<script type="module" src="./app.mjs"></script>
+<script type="module" src="./app.mjs?v=catalogue"></script>
 <script type="module" src="./microalbert.mjs"></script>
 </head>
 <body>
@@ -18,9 +18,9 @@
   <div class="top-inner">
     <a class="brand" href="#defi-001" aria-label="MicroAlbert, premier défi"><img class="brand-icon" src="./assets/microalbert-logo.png" width="128" height="128" alt=""><span>Micro<span class="brand-word">Albert</span><small>Atelier Python</small></span></a>
     <div class="top-actions atelier-actions">
-      <a class="quiet help-link" data-help-link href="./aide-albert.html">Aide Albert</a>
+      <button id="nav-toggle" class="primary mobile" type="button" aria-controls="sidebar" aria-expanded="false">Les 150 défis</button>
+      <a id="albert-help-link" class="quiet help-link" href="./aide-albert.html">Aide Albert</a>
       <a class="quiet help-link" data-help-link href="./aide-thonny.html">Guide Thonny</a>
-      <button id="nav-toggle" class="quiet mobile" type="button" aria-controls="sidebar" aria-expanded="false">Parcours</button>
       <span class="engine"><i aria-hidden="true"></i><span id="engine-state">Python dans le navigateur</span></span>
       <button id="theme-toggle" class="icon quiet" type="button" aria-label="Activer le mode sombre" title="Mode sombre">☾</button>
     </div>

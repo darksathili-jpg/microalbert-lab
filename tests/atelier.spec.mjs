@@ -46,13 +46,33 @@ test("ouvre et exécute SQLite avec les seules ressources servies par Pages", as
 test("recherche et ouvre un défi sur mobile, puis bascule en thème sombre", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("./");
-  await page.getByRole("button", { name: "Parcours", exact: true }).click();
+  const catalogue = page.getByRole("button", { name: "Les 150 défis", exact: true });
+  await expect(catalogue).toBeVisible();
+  await catalogue.click();
+  await expect(catalogue).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#nav a")).toHaveCount(150);
   await page.getByRole("searchbox", { name: "Rechercher un défi" }).fill("Addition à deux nombres");
   await page.getByRole("link", { name: /Addition à deux nombres/ }).click();
   await expect(page.getByRole("heading", { name: "Addition à deux nombres" })).toBeVisible();
+  await expect(catalogue).toHaveAttribute("aria-expanded", "false");
   await page.getByRole("button", { name: "Activer le mode sombre" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test("le catalogue fonctionne avec une page d’atelier restée en cache avant le guide Thonny", async ({ page }) => {
+  await page.route("**/microalbert-lab/", async route => {
+    const response = await route.fetch();
+    const html = (await response.text())
+      .replace(/<a[^>]*href="\.\/aide-thonny\.html"[^>]*>.*?<\/a>/, "")
+      .replace("./app.mjs?v=catalogue", "./app.mjs");
+    await route.fulfill({ response, body: html });
+  });
+  await page.goto("./#defi-150");
+  await expect(page.locator("#nav a")).toHaveCount(150);
+  await expect(page.locator("#nav a[aria-current]")).toHaveAttribute("href", "#defi-150");
+  await expect(page.getByRole("link", { name: "Aide Albert", exact: true }))
+    .toHaveAttribute("href", /aide-albert\.html\?retour=defi-150$/);
 });
 
 test("l’éditeur clair colore le Python et conserve la saisie, le défilement et le thème sombre", async ({ page }) => {
