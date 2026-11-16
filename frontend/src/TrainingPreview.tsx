@@ -30,6 +30,16 @@ export default function TrainingPreview() {
       {example.resolved_diagnostics > 0 && <p>Diagnostics structurels disparus après révision : {example.resolved_diagnostics}.</p>}
       <p>Comportement du programme non évalué.</p>
     </section>
+    {attempt === 1 && <section className="lab-dialogue" aria-label="Exemple de test justifié">
+      <h4>Exemple de test justifié</h4>
+      <pre className="lab-examples"><code>{activity.test_case.expression}</code></pre>
+      <dl>
+        <dt>Résultat attendu</dt><dd><code>{activity.test_case.expected}</code></dd>
+        <dt>Résultat observé sur cette tentative</dt><dd><code>{activity.test_case.observed}</code></dd>
+        <dt>Pourquoi ce cas ?</dt><dd>{activity.test_case.justification}</dd>
+      </dl>
+      <p className="lab-question">Que révèle cet écart sur le comportement de la fonction ?</p>
+    </section>}
     <h4>Tests à concevoir</h4>
     <ul>{activity.checks.map(check => <li key={check}>{check}</li>)}</ul>
   </details>;

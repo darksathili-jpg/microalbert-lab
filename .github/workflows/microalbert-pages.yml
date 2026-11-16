@@ -46,6 +46,8 @@ jobs:
         run: npm run build --prefix frontend
       - name: Tester la version standard
         run: npx playwright test --config=playwright.standard.config.cjs
+      - name: Vérifier le pilote enseignant de bout en bout
+        run: npx playwright test --config=playwright.teacher-pilot.config.cjs
       - name: Tester la variante de préproduction
         run: npx playwright test --config=playwright.student-staging.config.cjs --workers=1
       - name: Sélectionner explicitement l'entrée publique

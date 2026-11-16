@@ -10,6 +10,12 @@
       "Mesure égale au seuil, valeurs en dessous et au-dessus du seuil.",
       "Valeurs répétées et seuil négatif. Vérifier aussi la liste après l’appel."
     ],
+    "test_case": {
+      "expression": "total_seuil([5, 4], 5)",
+      "expected": "5",
+      "observed": "0",
+      "justification": "Vérifier que la mesure égale au seuil est prise en compte."
+    },
     "examples": [
       {
         "source": "def total_seuil(mesures, seuil):\n    pass\n",
@@ -22,7 +28,7 @@
         "attempt": 1
       },
       {
-        "source": "def total_seuil(mesures, seuil):\n    return None\n",
+        "source": "def total_seuil(mesures, seuil):\n    return 0\n",
         "question": "Quels tests pourrais-tu maintenant construire pour vérifier que le comportement de ton programme correspond à la consigne, y compris dans les cas limites ?",
         "observations": [],
         "resolved_diagnostics": 2,
@@ -41,6 +47,12 @@
       "Un cycle et un sommet sans chemin depuis le départ.",
       "Deux branches menant au même sommet. Vérifier aussi l’ordre du parcours."
     ],
+    "test_case": {
+      "expression": "salles_accessibles({'A': ['B'], 'B': ['A']}, 'A')",
+      "expected": "['A', 'B']",
+      "observed": "['A']",
+      "justification": "Vérifier qu’un cycle permet de visiter B sans inscrire A une deuxième fois."
+    },
     "examples": [
       {
         "source": "def salles_accessibles(graphe, depart):\n    pass\n",
@@ -53,7 +65,7 @@
         "attempt": 1
       },
       {
-        "source": "def salles_accessibles(graphe, depart):\n    return None\n",
+        "source": "def salles_accessibles(graphe, depart):\n    return [depart]\n",
         "question": "Quels tests pourrais-tu maintenant construire pour vérifier que le comportement de ton programme correspond à la consigne, y compris dans les cas limites ?",
         "observations": [],
         "resolved_diagnostics": 2,

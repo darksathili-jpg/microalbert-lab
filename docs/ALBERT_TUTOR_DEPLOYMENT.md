@@ -25,9 +25,13 @@ réponses du modèle ne constituent pas une preuve de correction.
   contrôle de rôle, quota et politique de tutorat. Pour les activités du
   catalogue, le jeton de session doit correspondre à l’enseignant et à l’exercice.
   La consigne, les diagnostics structurels et des extraits bornés de la
-  difficulté et du programme sont transmis au fournisseur configuré. La
-  relance précédente est conservée en mémoire par session et la réponse passe
-  par le contrôle antisolutions. L’analyse structurelle reste indépendante.
+  difficulté et du programme sont transmis au fournisseur configuré. Le
+  pilote peut joindre un cas de test complet, avec l’appel Python, le résultat
+  attendu, l’observation saisie et sa justification. Le tuteur peut demander
+  d’expliquer un écart ou de justifier le cas. Le navigateur exécute Python
+  localement. Le serveur reçoit une observation déclarée et ne certifie pas
+  le résultat. La relance précédente est conservée en mémoire par session et
+  la réponse passe par le contrôle antisolutions.
 - **Aucun appel réel activé par défaut** ; la route renvoie 503 sans adaptateur.
 - L'interface publique n'est pas encore connectée au tutorat.
 - L'authentification locale en mémoire est une démonstration, pas un système
@@ -50,6 +54,56 @@ une session et utiliser **Demander une relance** sous le programme. Le modèle
 « Simulation locale » enchaîne des réponses fictives via le même adaptateur
 et le même filtrage que le pilote Albert. Ce lanceur n’effectue aucun appel réseau
 à Albert. L’interface affiche au plus les dix derniers échanges de la session.
+
+Pour vérifier le parcours, demander une première relance, puis ouvrir
+**Préparer et justifier un cas de test**. Saisir l’appel, le résultat attendu
+et la justification. Exécuter le code localement, relever la valeur ou
+l’exception dans **Résultat observé**, puis demander une nouvelle relance.
+Modifier le programme ou l’appel efface l’observation, afin de la refaire
+sur la nouvelle version. Changer de session efface le formulaire et les échanges.
+
+La recette automatisée lance le serveur local et le navigateur, utilise le
+transport simulé et bloque les requêtes externes de la page. Après installation
+des dépendances, elle se lance depuis la racine avec :
+
+```bash
+PATH="$PWD/.venv/bin:$PATH" npx playwright test --config=playwright.teacher-pilot.config.cjs
+```
+
+## Premier essai Albert réservé à l’enseignant
+
+Vérifier auprès de l’administrateur du compte la gratuité de l’accès, le quota
+restant et la politique de dépassement du modèle choisi. Vérifier également
+qu’un serveur HTTPS déjà disponible permet un essai privé sans coût
+supplémentaire, avec contrôle d’accès enseignant à l’entrée, y compris pour
+les ressources et les routes directes. Enregistrer ces vérifications avant
+d’activer le fournisseur. Le mode par défaut du lanceur désactive le
+fournisseur et le mode simulation utilise un transport fictif, quels que
+soient les réglages du compte.
+
+Sur le serveur vérifié, configurer `MICROALBERT_PROVIDER=albert`,
+`MICROALBERT_REAL_ACCESS_APPROVED=yes` et `ALBERT_ALLOWED_MODELS` avec le
+seul identifiant autorisé pour l’essai. Injecter `ALBERT_API_KEY` depuis
+le gestionnaire de secrets serveur et utiliser l’origine HTTPS officielle
+configurée par défaut. Sous le contrôle d’accès enseignant déjà vérifié,
+lancer le pilote avec la commande ci-dessous. Il écoute uniquement sur
+la boucle locale et refuse de démarrer si la configuration Albert n’est
+pas approuvée. Servir la version standard compilée sous le même domaine
+HTTPS privé et y relayer `/api` vers le pilote local. Ne pas relayer
+`/api` depuis la démonstration Pages. Le jeton enseignant généré au démarrage
+reste nécessaire pour les routes protégées et doit rester dans la console
+administrative jusqu’à la saisie dans le pilote.
+
+```bash
+PYTHONPATH=backend .venv/bin/python -m app.local_teacher_pilot --albert
+```
+
+Tester d’abord un accès anonyme
+refusé et la présence de l’identifiant de modèle dans la liste interne,
+puis envoyer un seul tour avec un cas fictif. Vérifier que la réponse pose
+une question sur le cas et ne propose pas de corrigé. Consigner la date,
+le niveau, le modèle, le statut et l’identifiant de requête, sans clé ni
+données d’élève. Désactiver le fournisseur à la fin de l’essai.
 
 ## Conditions avant un pilote en classe
 

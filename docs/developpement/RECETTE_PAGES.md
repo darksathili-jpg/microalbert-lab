@@ -19,6 +19,7 @@ npm install --no-save --no-package-lock
 npx playwright install chromium
 npm run build --prefix frontend
 PATH="$PWD/.venv/bin:$PATH" npx playwright test --config=playwright.standard.config.cjs
+PATH="$PWD/.venv/bin:$PATH" npx playwright test --config=playwright.teacher-pilot.config.cjs
 npx playwright test --config=playwright.student-staging.config.cjs --workers=1
 ```
 

@@ -31,7 +31,7 @@ Pour chaque nouvelle activité, vérifier le niveau et la notion dans le program
 1. Avec l’identité de test enseignante, récupérer les activités via `GET /api/secure/assessment/activities`.
 2. Ouvrir une session via `POST /api/secure/assessment/session` avec le `mission_id` fourni par le catalogue.
 3. Envoyer `mission_id`, `session_id`, `source` et `phase` à `POST /api/secure/assessment`. Réutiliser le même identifiant pour suivre les tentatives. Seuls les codes de diagnostic alimentent l’historique.
-4. Lire la question posée et les éléments observés. La valeur `not_evaluated` indique qu’il reste à vérifier le comportement du programme. Les cas proposés aident à concevoir ces tests.
+4. Lire la question posée et les éléments observés. La valeur `not_evaluated` indique qu’il reste à vérifier le comportement. Pour un cas, prévoir le résultat, justifier le choix, exécuter l’appel dans le navigateur, puis noter l’observation. Si le tuteur est activé, lui demander une relance avec ces quatre éléments.
 
 Le pilote utilise une analyse syntaxique et structurelle de Python et des questions déterministes. Les tests automatisés couvrent les deux niveaux, la provenance, un scénario en trois tentatives, la séparation des sessions et les refus d’accès. Ils vérifient qu’une structure plausible ne suffit pas à valider le comportement. Les PDF et les corrigés de référence restent hors du dépôt et de la version publique.
 
@@ -39,7 +39,8 @@ Le pilote utilise une analyse syntaxique et structurelle de Python et des questi
 
 Dans la [démonstration GitHub Pages](https://darksathili-jpg.github.io/microalbert-lab/),
 ouvre **Voir les deux exercices inspirés d’annales**, choisis le niveau, puis
-compare les deux tentatives fictives. Le build contrôle que ces exemples sont
+compare les deux tentatives fictives. La tentative révisée présente aussi un
+cas de test justifié et l’écart observé sur ce programme. Le build contrôle que ces exemples sont
 générés depuis le catalogue et l’analyseur Python. Il s’agit d’une démonstration
 statique. Le navigateur ne soumet aucun programme au serveur et n’appelle pas Albert.
 

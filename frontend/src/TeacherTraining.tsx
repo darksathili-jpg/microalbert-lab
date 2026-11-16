@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './TeacherTraining.css';
 import PythonEditor from './PythonEditor';
+import PythonRunner from './PythonRunner';
 
 type Activity = {
   mission_id: string;
@@ -20,6 +21,15 @@ type Assessment = {
 
 type TutorTurn = { message: string; reply: string; label: string };
 
+const testFields = [
+  { name: 'expression', label: 'Appel Python à tester', max: 200 },
+  { name: 'expected', label: 'Résultat attendu', max: 160 },
+  { name: 'observed', label: 'Résultat observé', max: 160 },
+  { name: 'justification', label: 'Pourquoi ce cas de test ?', max: 240 },
+] as const;
+type TestCase = Record<typeof testFields[number]['name'], string>;
+const emptyTestCase: TestCase = { expression: '', expected: '', observed: '', justification: '' };
+
 const endpoint = '/api/secure/assessment';
 const tutorEndpoint = '/api/secure/tutor';
 
@@ -29,6 +39,8 @@ export default function TeacherTraining() {
   const [mission, setMission] = useState('');
   const [session, setSession] = useState('');
   const [source, setSource] = useState('');
+  const [testCase, setTestCase] = useState<TestCase>(emptyTestCase);
+  const [runCount, setRunCount] = useState(0);
   const [result, setResult] = useState<Assessment>();
   const [models, setModels] = useState<string[]>([]);
   const [model, setModel] = useState('');
@@ -37,6 +49,8 @@ export default function TeacherTraining() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const activity = activities.find(item => item.mission_id === mission);
+  const caseStarted = testFields.some(({ name }) => testCase[name].trim());
+  const caseComplete = testFields.every(({ name }) => testCase[name].trim());
 
   async function request<T>(url: string, payload?: object): Promise<T> {
     const response = await fetch(url, {
@@ -65,13 +79,16 @@ export default function TeacherTraining() {
     setResult(undefined);
     setMessage('');
     setTurns([]);
+    setTestCase(emptyTestCase);
+    setRunCount(0);
   }
 
   async function sendTutorQuestion() {
     const difficulty = message.trim();
     const reply = await request<{ reply: string; warnings: string[] }>(tutorEndpoint, {
       model_id: model, mission_id: mission, session_id: session,
-      phase: 'implementation', source, message: difficulty,
+      phase: caseComplete ? 'verification' : 'implementation', source, message: difficulty,
+      ...(caseComplete ? { test_case: testCase } : {}),
     });
     setTurns(previous => [...previous.slice(-9), {
       message: difficulty,
@@ -125,7 +142,11 @@ export default function TeacherTraining() {
       })}>{session ? 'Ouvrir une autre session' : 'Ouvrir une session'}</button></div>
       {session && <>
         <label htmlFor="teacher-training-source">Programme de la tentative</label>
-        <PythonEditor id="teacher-training-source" value={source} onChange={setSource}/>
+        <PythonEditor id="teacher-training-source" value={source} onChange={value => {
+          setSource(value);
+          setTestCase(previous => ({ ...previous, observed: '' }));
+          setRunCount(previous => previous + 1);
+        }}/>
         <div className="lab-actions"><button type="button" disabled={busy || !source.trim() || source.length > 8000}
           onClick={() => void run(async () => setResult(await request<Assessment>(endpoint, {
             mission_id: mission, session_id: session, source, phase: 'implementation',
@@ -138,6 +159,30 @@ export default function TeacherTraining() {
           {result.trend.resolved_findings.length > 0 && <p>Diagnostics structurels disparus : {result.trend.resolved_findings.length}.</p>}
           <p>Comportement du programme non évalué.</p>
         </section>}
+        <details className="lab-dialogue">
+          <summary>Préparer et justifier un cas de test</summary>
+          <p>Prévois le résultat et explique ton choix avant l’exécution. Note ensuite la valeur affichée ou l’exception observée.</p>
+          {testFields.map(({ name, label, max }) => <div key={name}>
+            <label htmlFor={'teacher-test-' + name}>{label}</label>
+            <textarea id={'teacher-test-' + name} className="lab-notes" rows={2} maxLength={max}
+              value={testCase[name]} disabled={busy} onChange={event => {
+                const value = event.target.value;
+                setTestCase(previous => name === 'expression' && value !== previous.expression
+                  ? { ...previous, expression: value, observed: '' } : { ...previous, [name]: value });
+                if (name === 'expression') setRunCount(previous => previous + 1);
+              }}/>
+          </div>)}
+          {source.trim() && source.length <= 8000 && testCase.expression.trim()
+            && testCase.expected.trim() && testCase.justification.trim() &&
+            <PythonRunner key={runCount} source={source + '\n\nprint(' + testCase.expression + ')'} mission="entrainement"/>}
+          {caseStarted && <div className="lab-actions">
+            <button type="button" disabled={busy} onClick={() => {
+              setTestCase(emptyTestCase);
+              setRunCount(previous => previous + 1);
+            }}>Effacer le cas de test</button>
+          </div>}
+          <p className="lab-notice">L’exécution locale montre un comportement pour cet appel. L’observation saisie reste déclarative.</p>
+        </details>
         <section className="lab-dialogue" aria-labelledby="teacher-tutor-heading">
           <h4 id="teacher-tutor-heading">Dialogue avec le tuteur</h4>
           {models.length === 0 ? <p>Le fournisseur de dialogue est désactivé sur ce serveur. L’analyse structurelle reste disponible.</p> : <>
@@ -158,8 +203,10 @@ export default function TeacherTraining() {
             <label htmlFor="teacher-tutor-message">Décrire la difficulté</label>
             <textarea id="teacher-tutor-message" className="lab-notes" rows={3} maxLength={1000}
               disabled={busy} value={message} onChange={event => setMessage(event.target.value)}/>
+            {caseStarted && !caseComplete && <p>Complète les quatre champs ou efface le cas pour demander une relance.</p>}
+            {caseComplete && <p>Le tuteur recevra le cas de test avec ta demande.</p>}
             <div className="lab-actions">
-              <button type="button" disabled={busy || !message.trim() || source.length > 8000}
+              <button type="button" disabled={busy || !message.trim() || source.length > 8000 || (caseStarted && !caseComplete)}
                 onClick={() => void run(sendTutorQuestion)}>Demander une relance</button>
             </div>
           </>}

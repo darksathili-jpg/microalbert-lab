@@ -9,6 +9,7 @@ from app.access_security import FixedWindowRateLimiter, LocalTokenRegistry, Prin
 from app.albert_adapter import AlbertAdapter, OFFICIAL_HOST, ProviderConfig
 from app.assessment_sessions import AssessmentSessionStore
 from app.local_teacher_pilot import SIMULATION_MODEL, simulate_reply
+from app import local_teacher_pilot
 from app.main import (
     app, get_assessment_sessions, get_secure_limiter, get_secure_registry,
     get_tutor_adapter, get_tutor_progress,
@@ -78,12 +79,25 @@ def test_two_tutor_turns_use_diagnostics_and_own_session(teacher_pilot, mission_
     assert mission.statement in prompt and mission.level in prompt
     assert "empty_body" in prompt and "Quel test choisir ?" in prompt
     assert session not in prompt
-    payload.update(message="J’ai modifié mon programme.", source=mission.starter_code.replace("pass", "return None"))
+    described_test = {
+        "expression": "appel(entrée)", "expected": "prévision",
+        "observed": "observation", "justification": "Pour distinguer deux comportements.",
+    }
+    payload.update(phase="verification", message="J’ai modifié mon programme.",
+                   source=mission.starter_code.replace("pass", "return None"), test_case=described_test)
     second = client.post(PATH, headers=auth, json=payload)
     assert second.status_code == 200
     assert second.json()["reply"] != question
     assert question in requests[1][1]["content"]
     assert "empty_body" not in requests[1][1]["content"]
+    line = next(line for line in requests[1][1]["content"].splitlines() if line.startswith("Cas de test déclaré : "))
+    assert json.loads(line.split(" : ", 1)[1]) == {
+        "appel": "appel(entrée)", "attendu": "prévision", "observé": "observation",
+        "justification": "Pour distinguer deux comportements.",
+    }
+    assert "déclarée par l’élève" in requests[1][0]["content"]
+    assert "Ne conclus pas" in requests[1][0]["content"]
+    payload.pop("test_case")
     payload["session_id"] = another
     assert client.post(PATH, headers=auth, json=payload).json()["reply"] == question
     assert question not in requests[2][1]["content"]
@@ -121,3 +135,66 @@ def test_checks_access_before_provider_and_recovers_after_error(teacher_pilot):
     assert revoked.status_code == 200
     assert client.post(PATH, headers=auth, json=payload).status_code == 403
     assert len(requests) == 3
+
+
+def test_training_test_fields_are_bounded_and_validated(teacher_pilot):
+    client, registry, requests, _ = teacher_pilot
+    auth = headers(registry)
+    mission_id = "terminale-parcours-graphe"
+    session = open_session(client, auth, mission_id)
+    case = {field: '"' * size for field, size in (
+        ("expression", 200), ("expected", 160), ("observed", 160), ("justification", 240),
+    )}
+    payload = dict(model_id=SIMULATION_MODEL, mission_id=mission_id, session_id=session,
+                   phase="verification", message="é" * 2000, source=" " * 7999 + "x", test_case=case)
+    assert client.post(PATH, headers=auth, json={**payload, "session_id": "invalid"}).status_code == 403
+    assert client.post(PATH, headers=auth, json={**payload, "mission_id": "file"}).status_code == 422
+    for invalid in [{"observed": "  "}, {"expected": "é" * 161}, {"extra": "unexpected"}]:
+        result = client.post(PATH, headers=auth, json={**payload, "test_case": {**case, **invalid}})
+        assert result.status_code == 422
+    assert not requests
+    result = client.post(PATH, headers=auth, json=payload)
+    assert result.status_code == 200
+    prompt = requests[0][1]["content"]
+    assert len(prompt) <= 4000
+    line = next(line for line in prompt.splitlines() if line.startswith("Cas de test déclaré : "))
+    assert json.loads(line.split(" : ", 1)[1])["justification"] == case["justification"]
+
+
+@pytest.mark.parametrize("args, calls_provider", [
+    ([], False), (["--simulate-tutor"], False), (["--albert"], True),
+])
+def test_launcher_requires_explicit_opt_in(monkeypatch, capsys, args, calls_provider):
+    import sys
+
+    adapter = object()
+    configured = []
+    launches = []
+    overrides = {}
+    monkeypatch.setattr(sys, "argv", ["pilot", *args])
+    monkeypatch.setattr(app, "dependency_overrides", overrides)
+    monkeypatch.setattr(local_teacher_pilot, "get_secure_registry", lambda: LocalTokenRegistry())
+    monkeypatch.setattr(local_teacher_pilot, "get_tutor_adapter", lambda: configured.append(True) or adapter)
+    monkeypatch.setattr(local_teacher_pilot.uvicorn, "run", lambda *a, **kw: launches.append(kw))
+    local_teacher_pilot.main()
+    assert bool(configured) == calls_provider
+    assert launches == [{"host": "127.0.0.1", "port": 8000, "workers": 1}]
+    selected = overrides[local_teacher_pilot.get_tutor_adapter]()
+    if args == ["--simulate-tutor"]:
+        assert selected.config.allowed_models == {SIMULATION_MODEL}
+    else:
+        assert selected is (adapter if calls_provider else None)
+    assert "Jeton temporaire" in capsys.readouterr().out
+
+
+def test_launcher_refuses_unapproved_albert(monkeypatch, capsys):
+    import sys
+
+    monkeypatch.setattr(sys, "argv", ["pilot", "--albert"])
+    monkeypatch.delenv("MICROALBERT_REAL_ACCESS_APPROVED", raising=False)
+    with pytest.raises(SystemExit) as error:
+        local_teacher_pilot.main()
+    assert error.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "non approuvée" in captured.err

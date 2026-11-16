@@ -83,6 +83,7 @@ test('Pages : les deux exercices d’annales et les tentatives sont visibles san
  await expect(page.getByRole('heading', { name: 'Tentative 2' })).toBeVisible();
  await expect(page.getByText(/Diagnostics structurels disparus/)).toBeVisible();
  await expect(page.getByText('Comportement du programme non évalué.')).toBeVisible();
+ await expect(page.getByRole('region', {name:'Exemple de test justifié'})).toContainText('total_seuil([5, 4], 5)');
  await page.getByRole('button', { name: 'Terminale' }).click();
  await expect(page.getByRole('heading', { name: 'Explorer les salles accessibles' })).toBeVisible();
  await expect(page.getByText(/Exercice original inspiré du sujet 26-NSIJ1ME1/)).toBeVisible();
@@ -93,5 +94,6 @@ test('Pages : les deux exercices d’annales et les tentatives sont visibles san
  await page.getByRole('button', { name: 'Voir la tentative révisée' }).click();
  await expect(page.getByRole('heading', { name: 'Tentative 2' })).toBeVisible();
  await expect(page.getByText(/Un sommet isolé/)).toBeVisible();
+ await expect(page.getByRole('region', {name:'Exemple de test justifié'})).toContainText("['A', 'B']");
  expect(requests).toEqual([]);
 });

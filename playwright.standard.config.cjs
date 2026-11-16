@@ -5,6 +5,7 @@ module.exports = defineConfig({
   ...standard,
   testIgnore: [
     'g4-public-pages-runtime.spec.cjs',
+    'g4-teacher-pilot-integration.spec.cjs',
     'g4-p6j-student-staging.spec.cjs',
     'g4-infra-01-python-themes.spec.cjs',
   ],
