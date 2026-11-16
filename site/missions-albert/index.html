@@ -9,7 +9,7 @@
 header{padding:1.5rem 0}h1{margin:.2rem 0}.subtitle{color:#40516c}
 .layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(310px,1fr);gap:1.5rem}
 section{background:white;border:1px solid #cbd6e6;border-radius:16px;padding:1.2rem}
-.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;max-width:640px;position:relative;isolation:isolate}
+.board{display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:5px;max-width:640px;position:relative;isolation:isolate}
 .cell{aspect-ratio:1;border:1px solid #b9c9dd;border-radius:9px;background:#eaf2fa;display:grid;place-items:center;position:relative}
 .wall{background:#54647c}.target{background:radial-gradient(circle at 50% 55%,#d9f8fa,#bce7ca);box-shadow:inset 0 0 0 2px #168b91}
 .target::before{content:"";width:60%;height:60%;border-radius:14%;background:linear-gradient(145deg,#183d75,#176f9a);border:3px solid #8cefff;box-shadow:0 0 0 4px #174c7140,0 0 16px #39d8ff80;transform:rotate(-7deg)}
@@ -33,33 +33,35 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <body>
 <main>
 <header><p><a href="../index.html">← Retour aux 150 défis Python</a></p><p class="subtitle">MICROALBERT LAB · PROTOTYPE ISOLÉ · SNT</p><h1>Les missions d'Albert</h1>
-<p>Mission 01 : rejoindre la puce d’intelligence artificielle (IA) pour activer le laboratoire, sans traverser les obstacles. Départ (0, 2), objectif (2, 1).</p></header>
+<p>Huit missions progressives pour apprendre à programmer les déplacements d’Albert et récupérer des puces d’intelligence artificielle (IA). Départ (0, 2), objectif (2, 1).</p></header>
 <div class="layout">
-<section aria-label="Terrain de jeu"><h2>Le laboratoire</h2><div id="board" class="board" aria-label="Grille de quatre colonnes et trois lignes"></div>
+<section aria-label="Terrain de jeu"><label for="mission-select">Choisir une mission</label><select id="mission-select" style="display:block;width:100%;padding:.65rem;margin:.5rem 0 1rem;border:1px solid #657c9c;border-radius:8px"></select><p id="mission-progress"></p><h2 id="mission-title">Le laboratoire</h2><p id="mission-notion"></p><p id="mission-goal"></p><div id="board" class="board" aria-label="Grille de quatre colonnes et trois lignes"></div>
 <p id="feedback" role="status" aria-live="polite">Albert attend vos instructions.</p>
-<p class="subtitle">Les coordonnées commencent à (0, 0) en haut à gauche.</p></section>
+<p class="subtitle">Les coordonnées commencent à (0, 0) en haut à gauche.</p><details><summary>Un indice, sans donner la réponse</summary><p id="mission-help"></p></details><button id="next-mission" type="button" hidden>Mission suivante →</button></section>
 <section><h2>Votre programme</h2>
-<p>Une instruction par ligne : <code>albert.avancer()</code>, <code>albert.tourner_gauche()</code> ou <code>albert.tourner_droite()</code>.</p>
+<p>Écris des instructions de déplacement, puis découvre la <strong>boucle bornée</strong> <code>for</code> et les variables de type entier.</p>
 <label for="program">Instructions de déplacement</label>
-<textarea id="program" spellcheck="false">albert.avancer()
-albert.avancer()
-albert.tourner_gauche()
-albert.avancer()</textarea>
+<textarea id="program" spellcheck="false"></textarea>
 <div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
-<p class="notice"><strong>Limite du prototype :</strong> ce champ interprète seulement trois commandes prédéfinies ; il n'exécute pas encore Python. L'exécution Python isolée par Pyodide viendra ensuite.</p>
+<p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, boucles bornées et affectations d’entiers). Il n’exécute pas encore du Python général avec Pyodide.</p>
 <p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
 </div></main>
 <script type="module">
-import { executerMission, MISSION_DECOUVERTE } from './moteur.mjs';
+import { executerMission } from './moteur.mjs';
+import { MISSIONS_SNT } from './parcours-snt.mjs';
 const board=document.querySelector('#board'), feedback=document.querySelector('#feedback');
+const missionTitle=document.querySelector('#mission-title'),missionNotion=document.querySelector('#mission-notion'),missionGoal=document.querySelector('#mission-goal'),missionHelp=document.querySelector('#mission-help');
+const missionSelect=document.querySelector('#mission-select'),nextMission=document.querySelector('#next-mission'),progress=document.querySelector('#mission-progress');
 const run=document.querySelector('#run'), reset=document.querySelector('#reset'), program=document.querySelector('#program');
-const mission=MISSION_DECOUVERTE;
+let indexMission=0;
+let mission;
+const sauvegarde='microalbert-snt-parcours-v1';
 let generation=0;
 // La feuille existante contient 3 colonnes × 4 lignes de vignettes 256 × 256.
 const sprite=new Image();
 sprite.src='../assets/microalbert-einstein-sprites.png';
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
-let spriteReady=false, current={...mission.depart}, raf=0, activeEffects=[];
+let spriteReady=false, current={x:0,y:0,direction:'est'}, raf=0, activeEffects=[];
 const canvas=document.createElement('canvas');
 canvas.className='sprite-layer';
 canvas.setAttribute('aria-hidden','true');
@@ -70,7 +72,7 @@ function dimensions(){
   if(cells.length!==mission.largeur*mission.hauteur)return null;
   const bounds=board.getBoundingClientRect(), first=cells[0].getBoundingClientRect();
   const last=cells[cells.length-1].getBoundingClientRect();
-  const ratio=window.devicePixelRatio||1;
+  const ratio=Math.min(window.devicePixelRatio||1,2);
   canvas.width=Math.round(bounds.width*ratio);canvas.height=Math.round(bounds.height*ratio);
   canvas.style.width=bounds.width+'px';canvas.style.height=bounds.height+'px';
   ctx.setTransform(ratio,0,0,ratio,0,0);
@@ -184,18 +186,73 @@ function cancelEffects(){
   board.querySelectorAll('.absorb-chip,.absorb-aura').forEach(el=>el.remove());
 }
 function parse(source){
-  const lines=source.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  if(lines.length>mission.limiteInstructions)throw new Error('20 instructions maximum.');
-  return lines.map((line,i)=>{
-    const m=/^albert\.(avancer|tourner_gauche|tourner_droite)\(\)$/.exec(line);
-    if(!m)throw new Error(`Instruction non reconnue à la ligne ${i+1}.`);
-    return m[1];
-  });
+  const raw=source.replace(/\\r/g,'').split('\\n');
+  const vars=new Map(),commands=[];
+  let hasLoop=false,hasVariable=false;
+  function block(start,indent,end,depth){
+    if(depth>4)throw Error('Trop de boucles imbriquées.');
+    for(let i=start;i<end;){
+      const line=raw[i],text=line.trim(),spaces=line.match(/^ */)[0].length;
+      if(!text||text.startsWith('#')){i++;continue;}
+      if(spaces!==indent)throw Error('Indentation incorrecte à la ligne '+(i+1)+'.');
+      const assignment=/^([a-zA-Z_][a-zA-Z_0-9]*)\\s*=\\s*(\\d+)$/.exec(text);
+      if(assignment){vars.set(assignment[1],Number(assignment[2]));hasVariable=true;i++;continue;}
+      const loop=/^for\\s+([a-zA-Z_][a-zA-Z_0-9]*)\\s+in\\s+range\\((\\d+|[a-zA-Z_][a-zA-Z_0-9]*)\\):$/.exec(text);
+      if(loop){
+        hasLoop=true;const count=/^\\d+$/.test(loop[2])?Number(loop[2]):vars.get(loop[2]);
+        if(!Number.isInteger(count)||count<0||count>mission.limiteInstructions)throw Error('Nombre de répétitions invalide à la ligne '+(i+1)+'.');
+        let j=i+1;while(j<end&&(!raw[j].trim()||raw[j].match(/^ */)[0].length>indent))j++;
+        const child=raw.slice(i+1,j).find(l=>l.trim()&&!l.trim().startsWith('#'));
+        if(!child)throw Error('Boucle vide à la ligne '+(i+1)+'.');
+        const childIndent=child.match(/^ */)[0].length;
+        if(childIndent<=indent)throw Error('Le corps de la boucle doit être indenté.');
+        for(let k=0;k<count;k++)block(i+1,childIndent,j,depth+1);
+        i=j;continue;
+      }
+      const command=/^albert\\.(avancer|tourner_gauche|tourner_droite)\\(\\)$/.exec(text);
+      if(!command)throw Error('Instruction non reconnue à la ligne '+(i+1)+'.');
+      commands.push(command[1]);
+      if(commands.length>mission.limiteInstructions)throw Error('Limite de '+mission.limiteInstructions+' déplacements dépassée.');
+      i++;
+    }
+  }
+  block(0,0,raw.length,0);
+  return {commands,hasLoop,hasVariable};
 }
+function chargerMission(n){
+  generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;
+  indexMission=n;
+  const item=MISSIONS_SNT[n];
+  mission={largeur:item.largeur,hauteur:item.hauteur,depart:item.depart,objectif:item.cible,
+    obstacles:item.obstacles,limiteInstructions:item.max};
+  board.style.setProperty('--cols',mission.largeur);
+  missionTitle.textContent='Mission '+String(item.id).padStart(2,'0')+' — '+item.titre;
+  missionNotion.textContent='Notion : '+item.notion;
+  missionGoal.textContent=item.objectif;
+  missionHelp.textContent=item.aide;
+  missionSelect.value=String(n);
+  const done=JSON.parse(localStorage.getItem(sauvegarde)||'[]');
+  progress.textContent='Progression : '+done.length+' / '+MISSIONS_SNT.length+' missions réussies';
+  program.value=localStorage.getItem('microalbert-snt-code-'+n)??item.departCode;
+  feedback.textContent='Albert attend votre programme.';
+  nextMission.hidden=true;
+  draw(mission.depart);
+}
+missionSelect.replaceChildren(...MISSIONS_SNT.map((item,i)=>{
+  const option=document.createElement('option');option.value=String(i);
+  option.textContent=String(item.id).padStart(2,'0')+' · '+item.titre;return option;
+}));
+missionSelect.addEventListener('change',()=>chargerMission(Number(missionSelect.value)));
+nextMission.addEventListener('click',()=>chargerMission(Math.min(indexMission+1,MISSIONS_SNT.length-1)));
+program.addEventListener('input',()=>localStorage.setItem('microalbert-snt-code-'+indexMission,program.value));
 async function play(){
   const token=++generation;run.disabled=true;feedback.textContent='Exécution en cours…';
   try{
-    const result=executerMission(mission,parse(program.value));
+    const parsed=parse(program.value);
+    const item=MISSIONS_SNT[indexMission];
+    if(item.exigeBoucle&&!parsed.hasLoop)throw Error('Cette mission demande une boucle bornée for.');
+    if(item.exigeVariable&&!parsed.hasVariable)throw Error('Cette mission demande une affectation à une variable de type entier.');
+    const result=executerMission(mission,parsed.commands);
     draw(result.trace[0]);
     for(let i=1;i<result.trace.length;i++){
       if(token!==generation)return;
@@ -210,12 +267,18 @@ async function play(){
       current={...result.position,direction:'sud'};
       paint(current,1);
     }
-    feedback.textContent=result.erreur?`Arrêt : ${result.erreur}`:result.reussite?'Mission réussie ! Albert vous regarde : laboratoire activé !':'Objectif non atteint : modifiez votre programme.';
+    if(result.reussite){
+      const done=new Set(JSON.parse(localStorage.getItem(sauvegarde)||'[]'));
+      done.add(indexMission);localStorage.setItem(sauvegarde,JSON.stringify([...done]));
+      progress.textContent='Progression : '+done.size+' / '+MISSIONS_SNT.length+' missions réussies';
+      nextMission.hidden=indexMission===MISSIONS_SNT.length-1;
+    }
+    feedback.textContent=result.erreur?`Arrêt : ${result.erreur}`:result.reussite?'Mission réussie ! Albert a intégré la puce IA !':'Objectif non atteint : modifiez votre programme.';
   }catch(e){feedback.textContent=e instanceof Error?e.message:'Erreur de programme.';}
   finally{if(token===generation)run.disabled=false;}
 }
 run.addEventListener('click',play);
-reset.addEventListener('click',()=>{generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;draw(mission.depart);feedback.textContent='Albert attend vos instructions.';});
-draw(mission.depart);
+reset.addEventListener('click',()=>{generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;draw(mission.depart);feedback.textContent='Albert attend vos instructions.';nextMission.hidden=true;});
+chargerMission(0);
 </script>
 </body></html>
