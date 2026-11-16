@@ -1,128 +1,56 @@
-name: MicroAlbert - publication GitHub Pages
+name: MicroAlbert — publication GitHub Pages
 
 on:
   push:
     branches: [feature/g4-github-pages-preview]
-  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: microalbert-github-pages
+  group: microalbert-pages
   cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Compiler et vérifier avant publication
+  verifier:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - uses: actions/setup-python@v5
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - run: printf '%s\n' "$GITHUB_SHA" > dist/revision.txt
+      - uses: actions/upload-pages-artifact@v3
         with:
-          python-version: '3.12'
-      - name: Contrôler la politique zéro surcoût
-        run: python3 scripts/check_zero_cost.py
-      - name: Tester le backend Albert et les contrôles d'accès
-        run: |
-          python -m pip install -r backend/requirements.txt
-          PYTHONPATH=backend python -m pytest -q backend/tests tests/test_teacher_guide.py tests/pedagogie
-          PYTHONPATH=backend python scripts/generate_training_preview.py --check
-      - name: Installer frontend
-        run: npm ci --prefix frontend
-      - name: Installer le banc de tests navigateur
-        run: npm install --no-save --no-package-lock
-      - name: Installer Chromium pour la recette
-        run: npx playwright install --with-deps chromium
-      - name: Compiler la version standard
-        run: npm run build --prefix frontend
-      - name: Tester la version standard
-        run: npx playwright test --config=playwright.standard.config.cjs
-      - name: Vérifier le pilote enseignant de bout en bout
-        run: npx playwright test --config=playwright.teacher-pilot.config.cjs
-      - name: Tester la variante de préproduction
-        run: npx playwright test --config=playwright.student-staging.config.cjs --workers=1
-      - name: Sélectionner explicitement l'entrée publique
-        run: |
-          cp frontend/index-public.html frontend/index.html
-          grep -q 'src="/src/main-public.tsx"' frontend/index.html
-          if grep -q 'src="/src/main.tsx"' frontend/index.html; then
-            echo "ECHEC : entrée complète détectée"
-            exit 1
-          fi
-      - name: Vérifier la présence de l'illustration MicroAlbert
-        run: |
-          test -s frontend/public/microalbert-reference-left.webp
-          file frontend/public/microalbert-reference-left.webp | grep -q 'Web/P image'
-      - name: Compiler la version publique isolée
-        run: npm run build --prefix frontend -- --mode public-demo
-      - name: Vérifier la copie de l'illustration dans le site compilé
-        run: |
-          test -s frontend/dist/microalbert-reference-left.webp
-          cmp frontend/public/microalbert-reference-left.webp frontend/dist/microalbert-reference-left.webp
-      - name: Vérifier les artefacts
-        run: python3 scripts/check_staging_artifacts.py
-      - name: Vérifier le périmètre du bundle public
-        run: python3 scripts/check_public_demo.py
-      - name: Tester le véritable build GitHub Pages
-        run: npx playwright test --config=playwright.public-pages.config.cjs
-      - name: Préserver les journaux de test en cas d'échec
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: microalbert-pages-test-failure
-          path: |
-            test-results/
-            playwright-report/
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Identifier le commit validé dans le site
-        run: printf '%s\n' "$GITHUB_SHA" > frontend/dist/revision.txt
-      - name: Préparer les artefacts GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: frontend/dist
+          path: dist
 
-  deploy:
-    name: Publier après vérifications
-    needs: validate
+  publier:
+    needs: verifier
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.pages.outputs.page_url }}
     steps:
-      - name: Déployer GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-      - name: Vérifier le site publié et ses ressources
-        shell: bash
+      - uses: actions/deploy-pages@v4
+        id: pages
+      - name: Vérifier la révision publiée
+        env:
+          PAGE_URL: ${{ steps.pages.outputs.page_url }}
         run: |
-          set -euo pipefail
-          SITE="https://darksathili-jpg.github.io/microalbert-lab/"
-          for attempt in $(seq 1 12); do
-            echo "Contrôle du site publié — tentative ${attempt}/12"
-            if LIVE_SHA=$(curl --fail --location --silent --show-error --max-time 15 "${SITE}revision.txt?sha=${GITHUB_SHA}") &&
-               [[ "$LIVE_SHA" == "$GITHUB_SHA" ]] &&
-               curl --fail --location --silent --show-error --max-time 15 "$SITE" -o /tmp/microalbert-live.html; then
-              ASSET=$(grep -oE 'src="/microalbert-lab/assets/[^"]+\.js"' /tmp/microalbert-live.html | head -n 1 | cut -d '"' -f 2 || true)
-              if [[ -n "$ASSET" ]] && curl --fail --location --silent --show-error --max-time 15 "https://darksathili-jpg.github.io$ASSET" -o /tmp/microalbert-live.js; then
-                if grep -q 'student-heading' /tmp/microalbert-live.js && curl --fail --location --silent --show-error --max-time 15 "${SITE}pyodide/pyodide.js" -o /dev/null; then
-                  echo "Site public au commit ${GITHUB_SHA}, JavaScript et moteur Pyodide accessibles."
-                  exit 0
-                fi
-              fi
-            fi
-            if [[ "$attempt" -lt 12 ]]; then sleep 10; fi
+          for tentative in {1..12}; do
+            revision="$(curl -fsS --max-time 10 "${PAGE_URL%/}/revision.txt?ref=$GITHUB_SHA" || true)"
+            if [[ "$revision" == "$GITHUB_SHA" ]]; then exit 0; fi
+            sleep 5
           done
-          echo "::error::Le site publié ne présente pas toutes les ressources attendues."
           exit 1
-

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="150 défis en français pour apprendre Python dans le navigateur.">
+<title>MicroAlbert | Atelier Python autonome</title>
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./microalbert.css">
+<script type="module" src="./app.mjs"></script>
+<script type="module" src="./microalbert.mjs"></script>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#defi-001" aria-label="MicroAlbert, premier défi"><span class="brand-icon" aria-hidden="true">⚛︎</span><span>Micro<span class="brand-word">Albert</span><small>Atelier Python</small></span></a>
+    <div class="top-actions"><button id="nav-toggle" class="quiet mobile" type="button" aria-controls="sidebar" aria-expanded="false">Parcours</button><span class="engine"><i aria-hidden="true"></i><span id="engine-state">Python dans le navigateur</span></span><button id="theme-toggle" class="icon quiet" type="button" aria-label="Activer le mode sombre" title="Mode sombre">☾</button></div>
+  </div>
+</header>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-intro"><div class="overline">PARCOURS PYTHON</div><h2>Les 150 défis</h2></div>
+    <div class="progress-label"><span>Ta progression</span><span id="progress-text">0 / 150</span></div>
+    <progress id="progress" aria-label="Défis terminés" max="150" value="0"></progress>
+    <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Rechercher un défi" aria-label="Rechercher un défi" autocomplete="off"></label>
+    <nav id="nav" aria-label="Défis par thème"></nav>
+  </aside>
+  <main id="main">
+    <div class="path"><span>Parcours</span><span aria-hidden="true">/</span><strong id="path-theme">Les bases</strong><span aria-hidden="true">/</span><span id="path-id">Défi 001</span></div>
+    <div class="hero">
+      <div class="hero-copy"><div class="overline" id="hero-theme">LES BASES</div><h1 id="title">Premier dialogue</h1><p id="goal">Saisir, convertir et afficher</p></div>
+      <div class="mascot" role="group" aria-label="Déplacer MicroAlbert">
+        <div class="mascot-stage">
+          <canvas id="albert" width="256" height="256" role="img" aria-label="MicroAlbert, Albert Einstein en bande dessinée"></canvas>
+        </div>
+        <div class="mascot-controls" id="albert-controls" aria-describedby="albert-help" hidden>
+          <span id="albert-help" class="sr-only">Utilise les boutons ou les flèches du clavier pour déplacer MicroAlbert.</span>
+          <button type="button" data-direction="left" aria-label="Aller à gauche" title="Aller à gauche">←</button>
+          <button type="button" data-direction="up" aria-label="Reculer" title="Reculer">↑</button>
+          <button type="button" data-direction="down" aria-label="Avancer" title="Avancer">↓</button>
+          <button type="button" data-direction="right" aria-label="Aller à droite" title="Aller à droite">→</button>
+          <span id="albert-position" class="sr-only" role="status"></span>
+        </div>
+      </div>
+    </div>
+    <div class="workspace">
+      <section class="brief" aria-label="Énoncé du défi">
+        <div class="task-panel">
+          <div class="small-label" id="challenge-id">DÉFI 001</div>
+          <h2>Ta mission</h2>
+          <div id="instruction" class="instruction"></div>
+          <details id="hint"><summary><span aria-hidden="true">✧</span> Voir un indice</summary><p id="hint-text"></p></details>
+        </div>
+        <details id="reference" class="reference"><summary>Fiche mémo <span aria-hidden="true">⌄</span></summary><p id="memo"></p><pre id="example"></pre><button type="button" id="load-example" class="quiet">Exécuter l’exemple dans la console libre</button><div id="graphic-guide"></div></details>
+        <details id="tutor-panel" class="reference tutor-panel" hidden>
+          <summary id="tutor-title">Aide pour ce défi <span aria-hidden="true">⌄</span></summary>
+          <p id="tutor-status" role="status" aria-live="polite">Vérification de la connexion…</p>
+          <form id="tutor-form">
+            <label for="tutor-mode">De quoi as-tu besoin ?</label>
+            <select id="tutor-mode">
+              <option value="indice">Obtenir un indice</option>
+              <option value="erreur">Comprendre mon erreur</option>
+              <option value="test">Choisir un cas de test</option>
+            </select>
+            <div class="tutor-actions">
+              <button type="submit" id="tutor-prepare" class="primary" disabled>Préparer la demande</button>
+              <button type="button" id="tutor-local" class="quiet" hidden>Aide locale</button>
+            </div>
+          </form>
+          <div id="tutor-review" hidden>
+            <p>Albert recevra l’énoncé et l’extrait ci-dessous. Retire tout nom, identifiant ou secret. Tu peux aussi vider l’extrait.</p>
+            <label for="tutor-code">Extrait Python à transmettre</label>
+            <textarea id="tutor-code" rows="5" maxlength="2200" spellcheck="false" autocomplete="off" aria-describedby="tutor-code-size"></textarea>
+            <span id="tutor-code-size"></span>
+            <label class="tutor-check"><input type="checkbox" id="tutor-diagnostic"> Joindre le diagnostic <span id="tutor-diagnostic-text"></span></label>
+            <div class="tutor-actions">
+              <button type="button" id="tutor-confirm" class="primary">Envoyer à Albert</button>
+              <button type="button" id="tutor-cancel" class="quiet">Annuler</button>
+            </div>
+          </div>
+          <div id="tutor-result" aria-live="polite" hidden>
+            <strong id="tutor-source"></strong>
+            <p id="tutor-hint"></p>
+            <p id="tutor-question"></p>
+          </div>
+        </details>
+        <button id="complete" class="quiet complete" type="button">✓ Marquer comme terminé</button>
+      </section>
+      <section class="lab" aria-label="Éditeur Python">
+        <div class="lab-head"><div class="lab-title"><span class="file-symbol" aria-hidden="true">⌘</span><strong>Atelier de code</strong></div><button type="button" id="free-toggle" class="quiet small">Console libre</button></div>
+        <div class="editor-title"><label for="code" id="file-label">defi_001.py</label><span>Python 3</span></div>
+        <div class="editor"><pre id="gutter" aria-hidden="true">1</pre><textarea id="code" aria-label="Code Python" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" wrap="off"></textarea></div>
+        <details id="input-area" class="input-area"><summary>Saisies pour <code>input()</code><span>Une valeur par ligne</span></summary><label class="sr-only" for="stdin">Saisies de test</label><textarea id="stdin" rows="3" spellcheck="false" autocapitalize="off" placeholder="Exemple : Lina"></textarea></details>
+        <div class="runbar">
+          <button id="run" type="button" class="primary"><span aria-hidden="true">▶</span> Exécuter</button>
+          <button id="stop" type="button" class="quiet" hidden>Arrêter</button>
+          <button id="verify" type="button" class="quiet">Vérifier</button>
+          <button id="reset" type="button" class="quiet">Réinitialiser</button>
+          <button id="download-code" type="button" class="quiet code-download" title="Télécharger le programme" aria-label="Télécharger le programme">↓</button>
+        </div>
+        <div class="results">
+          <div class="tabs" aria-label="Résultat de l’exécution">
+            <button type="button" data-tab="console" aria-pressed="true">Console</button>
+            <button type="button" data-tab="aperçu" aria-pressed="false">Aperçu</button>
+            <button type="button" data-tab="fichiers" aria-pressed="false">Fichiers<span id="files-count"></span></button>
+          </div>
+          <div id="panel-console"><pre id="console" tabindex="0" aria-label="Sortie Python">La sortie du programme apparaîtra ici.</pre><form id="input-live" hidden><label for="input-answer" id="input-prompt"></label><div><input id="input-answer" autocomplete="off"><button type="submit" class="primary">Envoyer</button></div></form><div id="test-results" hidden></div></div>
+          <div id="panel-aperçu" hidden>
+            <p id="preview-empty">Les dessins et interfaces de ton programme s’afficheront ici.</p>
+            <canvas id="drawing" width="660" height="370" aria-label="Dessin de la tortue" hidden></canvas>
+            <div id="interface" hidden><h3 id="interface-title"></h3><div id="interface-fields"></div><div id="interface-buttons"></div><div id="interface-image" hidden></div><pre id="interface-output" aria-live="polite"></pre></div>
+          </div>
+          <div id="panel-fichiers" hidden><p id="file-note">Les fichiers restent disponibles durant cette session Python. Télécharge-les pour les conserver.</p><ul id="files"></ul><pre id="file-preview" hidden></pre></div>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite">Prêt à exécuter</div>
+      </section>
+    </div>
+    <div class="lesson-nav"><button type="button" class="quiet" id="prev">← Défi précédent</button><button type="button" class="quiet" id="next">Défi suivant →</button></div>
+    <footer>Parcours en français d’après <cite>Python by Example</cite>, Nichola Lacey, Cambridge University Press, 2019. <a href="https://doi.org/10.1017/9781108591942">Référence de l’ouvrage</a></footer>
+  </main>
+</div>
+</body>
+</html>

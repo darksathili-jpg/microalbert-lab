@@ -1,12 +1,15 @@
 {
-  "name": "microalbert-lab-g0-checks",
+  "name": "microalbert-lab",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "description": "G0 documentation browser verification only; not an application",
+  "engines": { "node": ">=24" },
   "scripts": {
-    "test:e2e": "playwright test"
+    "prepare:python": "node scripts/preparer-site.mjs --local",
+    "build": "node scripts/preparer-site.mjs --pages",
+    "start": "npm run prepare:python && node serveur/atelier.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test"
   },
-  "devDependencies": {
-    "@playwright/test": "1.56.1"
-  }
+  "dependencies": { "pyodide": "314.0.8" },
+  "devDependencies": { "@playwright/test": "1.56.1" }
 }

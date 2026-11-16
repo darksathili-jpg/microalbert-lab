@@ -1,18 +1,12 @@
-# Secrets and local settings
 .env
 .env.*
-!.env.example
 *.pem
 *.key
-__pycache__/
-.pytest_cache/
-.venv/
 node_modules/
 dist/
-coverage/
-playwright-report/
+site/pyodide/
 test-results/
-
-# Generated local browser/runtime assets
-frontend/public/pyodide/
-/artifacts/
+playwright-report/
+__pycache__/
+.venv/
+artifacts/
