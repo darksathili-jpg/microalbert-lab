@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Les missions d'Albert — prototype SNT</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#13233d;background:#f6f9fd}
+*{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:auto;padding:1.5rem}
+header{padding:1.5rem 0}h1{margin:.2rem 0}.subtitle{color:#40516c}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+section{background:white;border:1px solid #cbd6e6;border-radius:16px;padding:1.2rem}
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;max-width:440px}
+.cell{aspect-ratio:1;border:1px solid #b9c9dd;border-radius:9px;background:#eaf2fa;display:grid;place-items:center;position:relative}
+.wall{background:#54647c}.target{background:#bce7ca}.cell small{position:absolute;bottom:3px;right:5px;color:#526176;font-size:.65rem}
+.albert{display:block;width:72%;height:72%;background-image:url('./albert-sprites.png');background-size:300% 400%;background-position:50% 0%;background-repeat:no-repeat}
+.albert.no-sprite{background:none;display:grid;place-items:center;font-size:2rem}
+textarea{width:100%;min-height:170px;border:2px solid #657c9c;border-radius:8px;padding:1rem;font:1rem/1.6 ui-monospace,Consolas,monospace;color:#15243e;background:#f8fbff}
+button{border:0;border-radius:9px;background:#194c95;color:white;padding:.7rem 1rem;font-weight:700;cursor:pointer;margin:.3rem .4rem .3rem 0}
+button.secondary{background:#e3eaf4;color:#182a44}button:focus-visible,textarea:focus-visible{outline:3px solid #ed9d22;outline-offset:3px}
+button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem;border-radius:8px}
+#feedback{min-height:2.5rem;font-weight:600}code{background:#eaf2fa;padding:.15rem .35rem;border-radius:4px}
+@media(max-width:700px){.layout{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header><p class="subtitle">MICROALBERT LAB · PROTOTYPE ISOLÉ · SNT</p><h1>Les missions d'Albert</h1>
+<p>Mission 01 : rejoindre la case verte sans traverser les obstacles. Départ (0, 2), objectif (2, 1).</p></header>
+<div class="layout">
+<section aria-label="Terrain de jeu"><h2>Le laboratoire</h2><div id="board" class="board" aria-label="Grille de quatre colonnes et trois lignes"></div>
+<p id="feedback" role="status" aria-live="polite">Albert attend vos instructions.</p>
+<p class="subtitle">Les coordonnées commencent à (0, 0) en haut à gauche.</p></section>
+<section><h2>Votre programme</h2>
+<p>Une instruction par ligne : <code>albert.avancer()</code>, <code>albert.tourner_gauche()</code> ou <code>albert.tourner_droite()</code>.</p>
+<label for="program">Instructions de déplacement</label>
+<textarea id="program" spellcheck="false">albert.avancer()
+albert.avancer()
+albert.tourner_gauche()
+albert.avancer()</textarea>
+<div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
+<p class="notice"><strong>Limite du prototype :</strong> ce champ interprète seulement trois commandes prédéfinies ; il n'exécute pas encore Python. L'exécution Python isolée par Pyodide viendra ensuite.</p>
+<p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
+</div></main>
+<script type="module">
+import { executerMission, MISSION_DECOUVERTE } from './moteur.mjs';
+const board=document.querySelector('#board'), feedback=document.querySelector('#feedback');
+const run=document.querySelector('#run'), reset=document.querySelector('#reset'), program=document.querySelector('#program');
+const mission=MISSION_DECOUVERTE;
+let generation=0;
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const sprite=new Image();
+sprite.src='./albert-sprites.png';
+let spriteReady=false;
+sprite.onload=()=>{spriteReady=true;draw(mission.depart)};
+sprite.onerror=()=>{spriteReady=false;draw(mission.depart)};
+function draw(position){
+  board.replaceChildren();
+  for(let y=0;y<mission.hauteur;y++)for(let x=0;x<mission.largeur;x++){
+    const cell=document.createElement('div');cell.className='cell';
+    const wall=mission.obstacles.some(o=>o.x===x&&o.y===y);
+    if(wall)cell.classList.add('wall');
+    if(x===mission.objectif.x&&y===mission.objectif.y)cell.classList.add('target');
+    cell.setAttribute('aria-label',`Colonne ${x}, ligne ${y}${wall?', obstacle':''}${x===mission.objectif.x&&y===mission.objectif.y?', objectif':''}`);
+    if(x===position.x&&y===position.y){
+      const figure=document.createElement('span');figure.className='albert';
+      if(spriteReady){
+        const row={sud:0,ouest:1,est:2,nord:3}[position.direction];
+        figure.style.backgroundPosition=`50% ${row*100/3}%`;
+      }else{figure.classList.add('no-sprite');figure.textContent='A';figure.setAttribute('aria-label','Albert');}
+      cell.append(figure);cell.setAttribute('aria-label',cell.getAttribute('aria-label')+`, Albert orienté ${position.direction}`);
+    }
+    board.append(cell);
+  }
+}
+function parse(source){
+  const lines=source.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  if(lines.length>mission.limiteInstructions)throw new Error('20 instructions maximum.');
+  return lines.map((line,i)=>{
+    const m=/^albert\.(avancer|tourner_gauche|tourner_droite)\(\)$/.exec(line);
+    if(!m)throw new Error(`Instruction non reconnue à la ligne ${i+1}.`);
+    return m[1];
+  });
+}
+async function play(){
+  const token=++generation;run.disabled=true;feedback.textContent='Exécution en cours…';
+  try{
+    const result=executerMission(mission,parse(program.value));
+    for(const position of result.trace){
+      if(token!==generation)return;
+      draw(position);await delay(350);
+    }
+    if(token!==generation)return;
+    feedback.textContent=result.erreur?`Arrêt : ${result.erreur}`:result.reussite?'Mission réussie !':'Objectif non atteint : modifiez votre programme.';
+  }catch(e){feedback.textContent=e instanceof Error?e.message:'Erreur de programme.';}
+  finally{if(token===generation)run.disabled=false;}
+}
+run.addEventListener('click',play);
+reset.addEventListener('click',()=>{generation++;run.disabled=false;draw(mission.depart);feedback.textContent='Albert attend vos instructions.';});
+draw(mission.depart);
+</script>
+</body></html>
