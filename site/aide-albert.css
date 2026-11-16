@@ -1,4 +1,4 @@
-.albert-help {
+.help-page {
   max-width: 74rem;
   margin-inline: auto;
   padding-block: clamp(1.5rem, 5vw, 3.6rem);
@@ -31,6 +31,7 @@
 }
 
 .help-card h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); line-height: 1.15; }
+.help-card h3 { margin-top: .9rem; font-size: 1.05rem; }
 .help-card p { margin-block: .8rem; }
 .help-link { display: inline-flex; align-items: center; text-decoration: none; white-space: normal; }
 .help-card .help-link { margin-block: .25rem; padding: .7rem 1rem; }
@@ -39,18 +40,27 @@
 .help-links, .help-steps { padding-inline-start: 1.35rem; margin-block: .8rem 0; }
 .help-links li + li, .help-steps li + li { margin-top: .4rem; }
 .help-steps { margin-bottom: .9rem; }
-.help-microalbert { margin-top: 1rem; }
+.help-wide { margin-top: 1rem; }
+
+.help-code {
+  padding: .7rem 1rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  white-space: pre-wrap;
+}
 
 @media (max-width: 700px) {
   .help-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 420px) {
-  .albert-help-top { gap: .45rem; padding-inline: 10px; }
-  .albert-help-top .help-link { padding-inline: .5rem; }
+  .help-top { gap: .45rem; padding-inline: 10px; }
+  .help-top .help-link { padding-inline: .5rem; }
 }
 
-@media (max-width: 380px) {
-  .top-inner:has(#albert-help-link) { flex-wrap: wrap; padding-block: .55rem; gap: .45rem; }
-  .top-inner:has(#albert-help-link) .top-actions { flex-wrap: wrap; }
+@media (max-width: 475px) {
+  .top-inner:has(.atelier-actions) { flex-wrap: wrap; padding-block: .55rem; gap: .45rem; }
+  .atelier-actions { flex-wrap: wrap; }
+  .atelier-actions .help-link, .atelier-actions #nav-toggle { padding-inline: .57rem; }
 }

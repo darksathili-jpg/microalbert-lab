@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Installer Thonny, l’utiliser sans installation sous Windows et ouvrir un programme Python de MicroAlbert.">
+<title>Guide Thonny | MicroAlbert</title>
+<link rel="icon" type="image/png" href="./assets/microalbert-logo.png">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./microalbert.css">
+<link rel="stylesheet" href="./aide-albert.css">
+<script type="module" src="./aide-albert.mjs"></script>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner help-top">
+    <a class="brand" id="help-home" href="./" aria-label="MicroAlbert, retour à l’atelier"><img class="brand-icon" src="./assets/microalbert-logo.png" width="128" height="128" alt=""><span>Micro<span class="brand-word">Albert</span><small>Atelier Python</small></span></a>
+    <a class="quiet help-link" id="help-return" href="./">← Retour à l’atelier</a>
+  </div>
+</header>
+<main class="help-page">
+  <div class="help-intro">
+    <h1>Installer Thonny</h1>
+    <p>Thonny est un éditeur gratuit pour écrire, enregistrer et exécuter des programmes Python sur ton ordinateur. Les versions proposées pour Windows et macOS incluent Python.</p>
+    <a href="https://thonny.org/">Site officiel et téléchargements à jour</a>
+    <p><a href="#thonny-portable">Aller aux étapes pour utiliser Thonny sans installation</a></p>
+  </div>
+
+  <div class="help-grid">
+    <section class="help-card" aria-labelledby="thonny-installation">
+      <h2 id="thonny-installation">Installer sur ton ordinateur</h2>
+      <h3>Windows 10 ou 11</h3>
+      <ol class="help-steps">
+        <li>Dans <strong>Paramètres → Système → À propos de</strong> (ou <strong>Informations système</strong>), repère le <strong>Type du système</strong>. Choisis <strong>x64</strong> pour Intel ou AMD, ou <strong>ARM64</strong> pour un processeur ARM.</li>
+        <li>Télécharge puis ouvre le fichier <code>.exe</code>. Suis les instructions de l’installateur.</li>
+        <li>Ouvre <strong>Thonny</strong> depuis le menu Démarrer.</li>
+      </ol>
+      <ul class="help-links">
+        <li><a href="https://github.com/thonny/thonny/releases/download/v5.0.1/thonny-5.0.1-x64.exe">Télécharger l’installateur Windows x64</a></li>
+        <li><a href="https://github.com/thonny/thonny/releases/download/v5.0.1/thonny-5.0.1-arm64.exe">Télécharger l’installateur Windows ARM64</a></li>
+      </ul>
+      <h3>macOS</h3>
+      <p>Ouvre <strong>À propos de ce Mac</strong> dans le menu Apple. Choisis le paquet <code>.pkg</code> pour puce Apple ou pour processeur Intel, puis ouvre-le et suis les étapes. Lance ensuite Thonny depuis <strong>Applications</strong>.</p>
+      <ul class="help-links">
+        <li><a href="https://github.com/thonny/thonny/releases/download/v5.0.1/thonny-5.0.1-arm64.pkg">Télécharger Thonny pour un Mac avec puce Apple</a></li>
+        <li><a href="https://github.com/thonny/thonny/releases/download/v5.0.1/thonny-5.0.1-x64.pkg">Télécharger Thonny pour un Mac Intel</a></li>
+      </ul>
+      <h3>Linux</h3>
+      <p>L’installateur officiel utilise le Python 3 déjà présent sur ton ordinateur. Sur Debian, Ubuntu ou Linux Mint, tu peux aussi passer par le gestionnaire de paquets de ta distribution.</p>
+      <a href="https://github.com/thonny/thonny/wiki/Linux">Voir les instructions officielles pour Linux</a>
+    </section>
+
+    <section class="help-card" aria-labelledby="thonny-portable">
+      <h2 id="thonny-portable">Utiliser Thonny portable</h2>
+      <p>Cette archive pour Windows 10 ou 11 contient Thonny et Python. Après l’avoir extraite, tu peux écrire et exécuter des programmes hors ligne, sans installation, depuis un dossier ou une clé USB.</p>
+      <a class="primary help-link" href="https://github.com/thonny/thonny/releases/download/v5.0.1/thonny-5.0.1-windows-portable-x64.zip">Télécharger Thonny portable (.zip)</a>
+      <p>L’archive est prévue pour les processeurs Intel ou AMD x64. Sur Windows ARM64, elle utilise l’émulation x64.</p>
+      <ol class="help-steps">
+        <li>Dans l’Explorateur de fichiers, fais un clic droit sur l’archive <code>.zip</code> et choisis <strong>Extraire tout</strong>.</li>
+        <li>Choisis un dossier où tu peux enregistrer des fichiers. Pour emporter Thonny sur une clé USB, extrais l’archive dans un dossier de la clé ou copies-y le dossier décompressé en entier.</li>
+        <li>Dans le dossier décompressé, double-clique sur <code>thonny.exe</code>.</li>
+      </ol>
+      <p>Sur un poste du lycée, vérifie avec ton enseignant que l’exécution depuis ce dossier ou cette clé est autorisée.</p>
+      <a href="https://github.com/thonny/thonny/wiki/DeploymentOptions#portable-version">Documentation officielle du mode portable</a>
+    </section>
+  </div>
+
+  <section class="help-card help-wide" aria-labelledby="thonny-verifier">
+    <h2 id="thonny-verifier">Vérifier que Python fonctionne</h2>
+    <p>Saisis cette instruction dans l’éditeur de Thonny, enregistre le fichier sous <code>bonjour.py</code>, puis appuie sur <kbd>F5</kbd> ou utilise le menu <strong>Exécuter</strong>.</p>
+    <pre class="help-code"><code>print("Bonjour, MicroAlbert !")</code></pre>
+    <p>Le texte <samp>Bonjour, MicroAlbert !</samp> doit s’afficher dans la console, sous l’éditeur.</p>
+    <h3>Ouvrir un programme écrit dans MicroAlbert</h3>
+    <p>Dans ton défi, utilise le bouton <strong>Télécharger le programme</strong> (flèche vers le bas) au-dessus de l’éditeur. Dans Thonny, fais <strong>Fichier → Ouvrir</strong>, sélectionne le fichier <code>.py</code> téléchargé, puis exécute-le avec <kbd>F5</kbd>.</p>
+  </section>
+</main>
+</body>
+</html>

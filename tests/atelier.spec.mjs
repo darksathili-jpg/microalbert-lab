@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/*", async route => {
@@ -169,4 +170,33 @@ test("l’aide Albert présente les services officiels et revient au défi en co
 
   await page.goto("./aide-albert.html?retour=https%3A%2F%2Fexample.com");
   await expect(page.locator("#help-return")).toHaveAttribute("href", "./");
+});
+
+test("le guide Thonny s’ouvre sur mobile et permet de reprendre et d’exporter le programme", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("./#defi-004");
+  await page.getByRole("button", { name: "Activer le mode sombre" }).click();
+  const editor = page.getByRole("textbox", { name: "Code Python" });
+  const code = 'print("Bonjour, MicroAlbert !")';
+  await editor.fill(code);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await page.getByRole("link", { name: "Guide Thonny", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Installer Thonny", exact: true })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("link", { name: "Télécharger l’installateur Windows x64" }))
+    .toHaveAttribute("href", /^https:\/\/github\.com\/thonny\/thonny\/releases\/download\/.+x64\.exe$/);
+  await expect(page.getByRole("link", { name: "Télécharger Thonny portable (.zip)" }))
+    .toHaveAttribute("href", /^https:\/\/github\.com\/thonny\/thonny\/releases\/download\/.+windows-portable-x64\.zip$/);
+  await expect(page.getByRole("heading", { name: "Vérifier que Python fonctionne" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await page.getByRole("link", { name: "← Retour à l’atelier", exact: true }).click();
+  await expect(page).toHaveURL(/#defi-004$/);
+  await expect(editor).toHaveValue(code);
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Télécharger le programme" }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toMatch(/\.py$/);
+  expect(await readFile(await download.path(), "utf8")).toBe(code);
 });

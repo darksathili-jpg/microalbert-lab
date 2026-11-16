@@ -1,6 +1,6 @@
 # MicroAlbert — Atelier Python
 
-[Ouvrir l’atelier sur GitHub Pages](https://darksathili-jpg.github.io/microalbert-lab/) · [Aide Albert](https://darksathili-jpg.github.io/microalbert-lab/aide-albert.html)
+[Ouvrir l’atelier sur GitHub Pages](https://darksathili-jpg.github.io/microalbert-lab/) · [Aide Albert](https://darksathili-jpg.github.io/microalbert-lab/aide-albert.html) · [Guide Thonny](https://darksathili-jpg.github.io/microalbert-lab/aide-thonny.html)
 
 150 défis en français, du premier `input()` à SQLite et aux projets de synthèse. L’atelier fourni dans l’archive Windows est désormais la source de l’application. Il comprend le catalogue, la mascotte animée, une console libre et le moteur Python dans le navigateur. Les brouillons et les défis marqués comme terminés sont enregistrés dans le navigateur. Une partie des défis propose une vérification automatique.
 
