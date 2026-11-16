@@ -27,7 +27,8 @@ test("l’artefact Pages contient le moteur et les images, avec Albert local dé
   for (const forbidden of ["serveur", ".env", "node.exe", "node_modules"]) assert.ok(!entries.includes(forbidden));
   assert.match(await readFile(new URL("hebergement.mjs", root), "utf8"), /albertLocal = false/);
   for (const name of ["index.html", "pyodide/pyodide.asm.wasm", "pyodide/python_stdlib.zip",
-    "assets/laboratoire-microalbert.webp", "assets/microalbert-einstein-sprites.png"]) {
+    "assets/laboratoire-microalbert.webp", "assets/microalbert-einstein-sprites.png",
+    "assets/microalbert-logo.png"]) {
     assert.ok((await readFile(new URL(name, root))).length > 0);
   }
 });
