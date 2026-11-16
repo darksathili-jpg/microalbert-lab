@@ -22,13 +22,34 @@ réponses du modèle ne constituent pas une preuve de correction.
 
 - Adaptateur Albert présent et testé avec transport HTTP simulé.
 - Route pilote `POST /api/secure/tutor` : authentification enseignant,
-  contrôle de rôle, quota, politique de tutorat, fournisseur injecté seulement.
+  contrôle de rôle, quota et politique de tutorat. Pour les activités du
+  catalogue, le jeton de session doit correspondre à l’enseignant et à l’exercice.
+  La consigne, les diagnostics structurels et des extraits bornés de la
+  difficulté et du programme sont transmis au fournisseur configuré. La
+  relance précédente est conservée en mémoire par session et la réponse passe
+  par le contrôle antisolutions. L’analyse structurelle reste indépendante.
 - **Aucun appel réel activé par défaut** ; la route renvoie 503 sans adaptateur.
 - L'interface publique n'est pas encore connectée au tutorat.
 - L'authentification locale en mémoire est une démonstration, pas un système
   de comptes adapté à une classe.
 - La consigne envoyée au modèle ne garantit pas qu'il ne révélera jamais une
   solution. Les restrictions importantes doivent être contrôlées côté serveur.
+
+## Essayer le dialogue en simulation
+
+Dans deux terminaux depuis la racine du dépôt, après installation des dépendances :
+
+```bash
+PYTHONPATH=backend .venv/bin/python -m app.local_teacher_pilot --simulate-tutor
+npm run dev --prefix frontend
+```
+
+Ouvrir `http://127.0.0.1:5173` puis **Enseignant**. Saisir le jeton temporaire
+imprimé par le serveur (distinct de la clé Albert), choisir un niveau, ouvrir
+une session et utiliser **Demander une relance** sous le programme. Le modèle
+« Simulation locale » enchaîne des réponses fictives via le même adaptateur
+et le même filtrage que le pilote Albert. Ce lanceur n’effectue aucun appel réseau
+à Albert. L’interface affiche au plus les dix derniers échanges de la session.
 
 ## Conditions avant un pilote en classe
 

@@ -1,8 +1,6 @@
-"""G3-P1: Albert-compatible HTTP adapter, test-only; not wired into FastAPI.
+"""Albert HTTP adapter with a transport supplied by the server or tests.
 
-Protocol paths/payloads are provisional until checked against current official docs.
-A caller MUST inject an httpx.MockTransport during G3-P1 verification.
-No key is read from the environment by this module.
+The adapter never loads credentials from the environment itself.
 """
 from __future__ import annotations
 
