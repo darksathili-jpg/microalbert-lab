@@ -53,3 +53,92 @@ test("recherche et ouvre un défi sur mobile, puis bascule en thème sombre", as
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+test("l’éditeur clair colore le Python et conserve la saisie, le défilement et le thème sombre", async ({ page }) => {
+  await page.goto("./");
+  const input = page.getByRole("textbox", { name: "Code Python" });
+  const syntax = page.locator("#code-couleurs");
+  const legend = page.getByRole("list", { name: "Couleurs du code Python" });
+  await expect(legend).toBeVisible();
+  const program = [
+    "def saluer(prenom):",
+    '    """Repère',
+    '    sur deux lignes."""',
+    "    for fois in range(3):",
+    '        print(f"Bonjour, {prenom} !")  # commentaire',
+    "    return True",
+    'texte = "<b># chaîne</b>"',
+    'inachevee = "encore'
+  ].join("\n");
+  await input.fill(program);
+  await expect(syntax.locator(".py-keyword").first()).toHaveText("def");
+  await expect(syntax.locator(".py-function").filter({ hasText: /^saluer$/ })).toBeVisible();
+  await expect(syntax.locator(".py-value").filter({ hasText: /^3$/ })).toBeVisible();
+  await expect(syntax.locator(".py-value").filter({ hasText: /^True$/ })).toBeVisible();
+  await expect(syntax.locator(".py-string").filter({ hasText: /sur deux lignes/ })).toHaveCount(1);
+  await expect(syntax.locator(".py-string").filter({ hasText: /<b># chaîne<\/b>/ })).toHaveCount(1);
+  await expect(syntax.locator(".py-string").filter({ hasText: /inachevee/ })).toHaveCount(0);
+  await expect(syntax.locator(".py-string").filter({ hasText: /"encore/ })).toHaveCount(1);
+  await expect(syntax.locator(".py-string").filter({ hasText: /Bonjour/ })).toHaveCount(1);
+  await expect(syntax.locator(".py-comment")).toHaveText("# commentaire");
+  await expect(syntax.locator("b")).toHaveCount(0);
+  expect(await syntax.textContent()).toBe(program);
+
+  async function checkPalette() {
+    const palette = await page.locator(".editor").evaluate(el => {
+      const convert = color => (color.match(/\d+/g) ?? []).slice(0, 3).map(Number);
+      return {
+        background: convert(getComputedStyle(el).backgroundColor),
+        colors: Array.from(el.querySelectorAll("#code-couleurs span"), token => convert(getComputedStyle(token).color))
+      };
+    });
+    const luminance = channels => channels.reduce((sum, channel, index) => {
+      const v = channel / 255;
+      return sum + [0.2126, 0.7152, 0.0722][index] * (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    }, 0);
+    const background = luminance(palette.background);
+    for (const color of palette.colors) {
+      const foreground = luminance(color);
+      expect((Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05)).toBeGreaterThan(4.5);
+    }
+    expect(new Set(palette.colors.map(color => color.join(","))).size).toBeGreaterThanOrEqual(6);
+    return background;
+  }
+  expect(await checkPalette()).toBeGreaterThan(0.9);
+  await page.getByRole("button", { name: "Activer le mode sombre" }).click();
+  expect(await checkPalette()).toBeLessThan(0.1);
+  await expect(input).toHaveValue(program);
+
+  await input.fill("if True:");
+  await input.press("End");
+  await input.press("Enter");
+  await input.press("Tab");
+  await expect(input).toHaveValue("if True:\n        ");
+  const longProgram = Array.from({ length: 80 }, (_, i) => "valeur_" + i + " = " + "1".repeat(120)).join("\n") + "\n";
+  await input.fill(longProgram);
+  await input.evaluate(el => { el.scrollTop = 800; el.scrollLeft = 250; });
+  await expect.poll(() => input.evaluate(el => {
+    const paint = new DOMMatrix(getComputedStyle(document.querySelector(".editor-paint")).transform);
+    const gutter = new DOMMatrix(getComputedStyle(document.querySelector("#gutter span")).transform);
+    return el.scrollTop > 0 && el.scrollLeft > 0 && el.scrollTop === -paint.f && el.scrollTop === -gutter.f && el.scrollLeft === -paint.e;
+  })).toBe(true);
+  expect(await page.locator("#gutter span").textContent()).toMatch(/\n81$/);
+  expect(await syntax.textContent()).toBe(longProgram);
+
+  await input.fill("print(6 * 7)");
+  await page.getByRole("button", { name: "Exécuter", exact: true }).click();
+  await expect(page.getByLabel("Sortie Python")).toHaveText("42", { timeout: 30_000 });
+  await page.reload();
+  await expect(input).toHaveValue("print(6 * 7)");
+  await expect(syntax.locator(".py-function")).toHaveText("print");
+});
+
+test("la zone de code reste lisible si le module de coloration est indisponible", async ({ page }) => {
+  await page.route("**/coloration-python.mjs", route => route.abort());
+  await page.goto("./");
+  const input = page.getByRole("textbox", { name: "Code Python" });
+  await input.fill("print(42)");
+  await expect(input).toHaveValue("print(42)");
+  await expect(input).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
+  await expect(page.locator(".editor")).not.toHaveAttribute("data-coloration");
+});

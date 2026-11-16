@@ -2,7 +2,9 @@
   "name": "microalbert-lab",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "prepare:python": "node scripts/preparer-site.mjs --local",
     "build": "node scripts/preparer-site.mjs --pages",
@@ -10,6 +12,12 @@
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test"
   },
-  "dependencies": { "pyodide": "314.0.8" },
-  "devDependencies": { "@playwright/test": "1.56.1" }
+  "dependencies": {
+    "@lezer/highlight": "1.2.3",
+    "@lezer/python": "1.1.18",
+    "pyodide": "314.0.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
 }

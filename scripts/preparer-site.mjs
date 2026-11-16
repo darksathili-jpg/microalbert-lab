@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +17,16 @@ await mkdir(runtime, { recursive: true });
 const installed = resolve(root, "node_modules/pyodide");
 await Promise.all(files.map(name => copyFile(resolve(installed, name), resolve(runtime, name))));
 await copyFile(resolve(root, "licences/PYODIDE.txt"), resolve(runtime, "LICENSE.txt"));
+
+const lezer = resolve(site, "lezer");
+await mkdir(lezer, { recursive: true });
+for (const name of ["common", "highlight", "lr", "python"]) {
+  const source = resolve(root, "node_modules/@lezer", name);
+  const module = await readFile(resolve(source, "dist/index.js"), "utf8");
+  await writeFile(resolve(lezer, name + ".mjs"),
+    module.replace(/from ['"]@lezer\/(common|highlight|lr)['"]/g, 'from "./$1.mjs"'));
+  await copyFile(resolve(source, "LICENSE"), resolve(lezer, name + "-LICENSE.txt"));
+}
 
 if (mode === "--pages") {
   const dist = resolve(root, "dist");

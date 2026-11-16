@@ -4,6 +4,13 @@ import { setTutorChallenge, setTutorExecution } from "./tuteur.mjs";
 
 const $ = (id) => document.getElementById(id);
 const code = $("code");
+const gutter = $("gutter").firstElementChild;
+const colors = $("code-couleurs");
+const paintedCode = colors.parentElement;
+const editor = code.closest(".editor");
+const colorLegend = $("editor-legende");
+const highlightingLimit = 30000;
+let colorerPython;
 const stdin = $("stdin");
 const status = $("status");
 const consoleOut = $("console");
@@ -143,10 +150,27 @@ function notice(message, type = "") {
   status.dataset.state = type;
 }
 
-function lines() {
-  $("gutter").textContent = code.value.split("\n").map((_,i)=>i+1).join("\n");
-  $("gutter").scrollTop = code.scrollTop;
+function synchronizeEditor() {
+  gutter.style.transform = `translateY(${-code.scrollTop}px)`;
+  paintedCode.style.transform = `translate(${-code.scrollLeft}px, ${-code.scrollTop}px)`;
 }
+
+function lines() {
+  gutter.textContent = code.value.split("\n").map((_, i) => i + 1).join("\n");
+  const enabled = Boolean(colorerPython && code.value.length <= highlightingLimit);
+  if (enabled) colorerPython(code.value, colors);
+  else colors.replaceChildren();
+  editor.toggleAttribute("data-coloration", enabled);
+  colorLegend.hidden = !enabled;
+  synchronizeEditor();
+}
+
+import("./coloration-python.mjs").then(module => {
+  colorerPython = module.colorerPython;
+  lines();
+}).catch(() => {
+  // L’éditeur natif reste lisible si les fichiers de coloration sont indisponibles.
+});
 
 function starter(id) {
   return starters[id] ?? (id === 0 ? '# Console libre\nprint("Bonjour !")\n' : "# Écris ton programme ici.\n");
@@ -536,7 +560,7 @@ code.addEventListener("input",()=>{
   save();
   lines();
 });
-code.addEventListener("scroll",()=>{ $("gutter").scrollTop = code.scrollTop; });
+code.addEventListener("scroll", synchronizeEditor);
 code.addEventListener("keydown",(event)=>{
   if (event.key === "Tab" && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
     event.preventDefault();

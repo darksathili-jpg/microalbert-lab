@@ -5,6 +5,7 @@
 node_modules/
 dist/
 site/pyodide/
+site/lezer/
 test-results/
 playwright-report/
 __pycache__/

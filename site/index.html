@@ -7,6 +7,7 @@
 <title>MicroAlbert | Atelier Python autonome</title>
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="./microalbert.css">
+<link rel="stylesheet" href="./editeur-python.css">
 <script type="module" src="./app.mjs"></script>
 <script type="module" src="./microalbert.mjs"></script>
 </head>
@@ -89,7 +90,21 @@
       <section class="lab" aria-label="Éditeur Python">
         <div class="lab-head"><div class="lab-title"><span class="file-symbol" aria-hidden="true">⌘</span><strong>Atelier de code</strong></div><button type="button" id="free-toggle" class="quiet small">Console libre</button></div>
         <div class="editor-title"><label for="code" id="file-label">defi_001.py</label><span>Python 3</span></div>
-        <div class="editor"><pre id="gutter" aria-hidden="true">1</pre><textarea id="code" aria-label="Code Python" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" wrap="off"></textarea></div>
+        <div class="editor">
+          <pre id="gutter" aria-hidden="true"><span>1</span></pre>
+          <div class="editor-content">
+            <pre class="editor-paint" aria-hidden="true"><code id="code-couleurs"></code></pre>
+            <textarea id="code" aria-label="Code Python" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" wrap="off"></textarea>
+          </div>
+        </div>
+        <ul id="editor-legende" class="editor-legende" aria-label="Couleurs du code Python" hidden>
+          <li class="py-keyword">Mots-clés</li>
+          <li class="py-function">Fonctions</li>
+          <li class="py-string">Chaînes</li>
+          <li class="py-value">Valeurs</li>
+          <li class="py-symbol">Symboles</li>
+          <li class="py-comment">Commentaires</li>
+        </ul>
         <details id="input-area" class="input-area"><summary>Saisies pour <code>input()</code><span>Une valeur par ligne</span></summary><label class="sr-only" for="stdin">Saisies de test</label><textarea id="stdin" rows="3" spellcheck="false" autocapitalize="off" placeholder="Exemple : Lina"></textarea></details>
         <div class="runbar">
           <button id="run" type="button" class="primary"><span aria-hidden="true">▶</span> Exécuter</button>
