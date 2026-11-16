@@ -38,11 +38,13 @@ Le pilote utilise une analyse syntaxique et structurelle de Python et des questi
 ## Voir les activités dans le navigateur
 
 Dans la [démonstration GitHub Pages](https://darksathili-jpg.github.io/microalbert-lab/),
-ouvre **Voir les deux exercices inspirés d’annales**, choisis le niveau, puis
-compare les deux tentatives fictives. La tentative révisée présente aussi un
-cas de test justifié et l’écart observé sur ce programme. Le build contrôle que ces exemples sont
-générés depuis le catalogue et l’analyseur Python. Il s’agit d’une démonstration
-statique. Le navigateur ne soumet aucun programme au serveur et n’appelle pas Albert.
+choisis **Première** ou **Terminale**. Prévois le résultat du premier cas,
+écris ta fonction puis lance le test dans ton navigateur. Compare le résultat
+affiché à ta prédiction. L’indice et l’exemple de test justifié sont disponibles
+dans des volets à ouvrir quand tu en as besoin. Les deux exercices disposent
+de leur propre brouillon, conservé jusqu’au rechargement de la page.
+Les retours sont guidés par les choix et l’exécution locale. Le navigateur
+ne transmet aucune demande à Albert.
 
 Pour essayer l’analyse d’un programme dans l’espace **Enseignant**, démarre le
 pilote de démonstration sur la machine de recette, avec des données fictives.
