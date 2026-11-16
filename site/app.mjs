@@ -221,6 +221,8 @@ function route() {
   if (current?.id === selected.id) return;
   if (active) stopWorker("Exécution arrêtée lors du changement de défi.");
   current = selected;
+  const resume = current.id ? "defi-" + pad(current.id) : "console-libre";
+  $("albert-help-link").href = "./aide-albert.html?retour=" + resume;
   setTutorChallenge(current);
   if (current.id) lastChallenge = current.id;
   const {titre, consigne, attention, theme} = current;

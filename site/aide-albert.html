@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Découvrir Albert, l’essayer en ligne et créer une clé pour MicroAlbert.">
+<title>Aide Albert | MicroAlbert</title>
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./microalbert.css">
+<link rel="stylesheet" href="./aide-albert.css">
+<script type="module" src="./aide-albert.mjs"></script>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner albert-help-top">
+    <a class="brand" id="help-home" href="./" aria-label="MicroAlbert, retour à l’atelier"><span class="brand-icon" aria-hidden="true">⚛︎</span><span>Micro<span class="brand-word">Albert</span><small>Atelier Python</small></span></a>
+    <a class="quiet help-link" id="help-return" href="./">← Retour à l’atelier</a>
+  </div>
+</header>
+<main class="albert-help">
+  <div class="help-intro">
+    <h1>Découvrir l’IA Albert</h1>
+    <p>Albert donne accès à plusieurs modèles d’intelligence artificielle (IA) via un service de la Direction interministérielle du numérique (DINUM). Tu peux essayer ces modèles dans un navigateur. Pour les connecter à une application, il faut une <strong>clé API</strong> qui autorise l’application à utiliser l’interface de programmation.</p>
+    <a href="https://ia.numerique.gouv.fr/outils-ia/albert-api/">Présentation officielle d’Albert</a>
+  </div>
+
+  <div class="help-grid">
+    <section class="help-card" aria-labelledby="help-online">
+      <h2 id="help-online">Utiliser Albert en ligne</h2>
+      <p><strong>L’Assistant</strong> permet aux agents publics de dialoguer en ligne, sans créer de clé API.</p>
+      <a class="primary help-link" href="https://assistant.numerique.gouv.fr/">Ouvrir L’Assistant</a>
+      <p>Dans <strong>Nuage</strong>, les personnels de l’Éducation nationale peuvent aussi ouvrir l’assistant Albert par le bouton en forme d’étoiles.</p>
+      <ul class="help-links">
+        <li><a href="https://nuage.apps.education.fr/">Ouvrir Nuage</a></li>
+        <li><a href="https://monaidenumerique.education.gouv.fr/outils/nuage/faq/albert/">Aide de l’Éducation nationale sur Albert dans Nuage</a></li>
+      </ul>
+    </section>
+
+    <section class="help-card" aria-labelledby="help-key">
+      <h2 id="help-key">Créer une clé API</h2>
+      <ol class="help-steps">
+        <li>Ouvre la console officielle et identifie-toi avec <strong>ProConnect</strong> et ton compte professionnel.</li>
+        <li>Dans le menu <strong>API Keys</strong> (« Clés API »), donne un nom à la clé, par exemple <code>MicroAlbert</code>, choisis une date d’expiration, puis crée-la.</li>
+        <li>Enregistre la clé dès sa création dans un emplacement sécurisé. Vérifie le quota de ton compte pour le modèle choisi avant un premier essai.</li>
+      </ol>
+      <a class="primary help-link" href="https://albert.playground.etalab.gouv.fr/">Ouvrir la console Albert API</a>
+      <p>L’accès d’expérimentation pour les agents de la fonction publique de l’État est gratuit dans la limite des quotas.</p>
+      <ul class="help-links">
+        <li><a href="https://ia.numerique.gouv.fr/outils-ia/albert-api/tarifs-et-limites/">Tarifs et limites</a></li>
+        <li><a href="https://guides.ia.numerique.gouv.fr/albert-api/compte-and-usage/quotas">Quotas du compte</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="help-card help-microalbert" aria-labelledby="help-local">
+    <h2 id="help-local">Utiliser ta clé dans MicroAlbert</h2>
+    <p>Sur GitHub Pages, l’atelier fournit une aide locale. Pour un essai enseignant avec Albert, utilise le serveur de l’atelier local. Sous Windows, ouvre <code>02-Configurer-Albert.cmd</code>, saisis la clé dans la fenêtre de configuration masquée, indique le modèle, puis relance l’atelier. Ouvre <strong>Aide avec Albert</strong> depuis un défi.</p>
+    <p>Garde la clé côté serveur. Pour ton premier essai, envoie une tentative Python fictive et vérifie l’extrait avant de le transmettre.</p>
+    <ul class="help-links">
+      <li><a href="https://github.com/darksathili-jpg/microalbert-lab/blob/feature/g4-github-pages-preview/README.md#atelier-local-et-essai-albert">Guide de l’atelier local</a></li>
+      <li><a href="https://guides.ia.numerique.gouv.fr/albert-api">Documentation officielle d’Albert API</a></li>
+      <li><a href="https://ia.numerique.gouv.fr/outils-ia/albert-api/albert-api-contact/">Assistance Albert API</a></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -142,3 +142,31 @@ test("la zone de code reste lisible si le module de coloration est indisponible"
   await expect(input).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
   await expect(page.locator(".editor")).not.toHaveAttribute("data-coloration");
 });
+
+test("l’aide Albert présente les services officiels et revient au défi en cours", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("./#defi-004");
+  await page.getByRole("button", { name: "Activer le mode sombre" }).click();
+  const editor = page.getByRole("textbox", { name: "Code Python" });
+  await editor.fill("print(4)");
+  await page.getByRole("link", { name: "Aide Albert", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Découvrir l’IA Albert" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Créer une clé API" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  for (const [name, href] of [
+    ["Ouvrir L’Assistant", "https://assistant.numerique.gouv.fr/"],
+    ["Ouvrir Nuage", "https://nuage.apps.education.fr/"],
+    ["Ouvrir la console Albert API", "https://albert.playground.etalab.gouv.fr/"],
+    ["Quotas du compte", "https://guides.ia.numerique.gouv.fr/albert-api/compte-and-usage/quotas"]
+  ]) {
+    await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
+  }
+  await expect(page.locator("input, textarea, form")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.getByRole("link", { name: /Retour à l’atelier/ }).filter({ hasText: /Retour/ }).click();
+  await expect(page).toHaveURL(/#defi-004$/);
+  await expect(editor).toHaveValue("print(4)");
+
+  await page.goto("./aide-albert.html?retour=https%3A%2F%2Fexample.com");
+  await expect(page.locator("#help-return")).toHaveAttribute("href", "./");
+});

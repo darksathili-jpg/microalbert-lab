@@ -1,0 +1,56 @@
+.albert-help {
+  max-width: 74rem;
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 5vw, 3.6rem);
+}
+
+.help-intro { max-width: 48rem; margin-bottom: 1.6rem; }
+
+.help-intro h1 {
+  font-size: clamp(2rem, 5vw, 3.15rem);
+  letter-spacing: -.045em;
+  line-height: 1.08;
+}
+
+.help-intro p { margin: .8rem 0; }
+
+.help-intro p, .help-card { line-height: 1.58; }
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.help-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(1rem, 3vw, 1.65rem);
+}
+
+.help-card h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); line-height: 1.15; }
+.help-card p { margin-block: .8rem; }
+.help-link { display: inline-flex; align-items: center; text-decoration: none; white-space: normal; }
+.help-card .help-link { margin-block: .25rem; padding: .7rem 1rem; }
+.help-card code { overflow-wrap: anywhere; }
+
+.help-links, .help-steps { padding-inline-start: 1.35rem; margin-block: .8rem 0; }
+.help-links li + li, .help-steps li + li { margin-top: .4rem; }
+.help-steps { margin-bottom: .9rem; }
+.help-microalbert { margin-top: 1rem; }
+
+@media (max-width: 700px) {
+  .help-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 420px) {
+  .albert-help-top { gap: .45rem; padding-inline: 10px; }
+  .albert-help-top .help-link { padding-inline: .5rem; }
+}
+
+@media (max-width: 380px) {
+  .top-inner:has(#albert-help-link) { flex-wrap: wrap; padding-block: .55rem; gap: .45rem; }
+  .top-inner:has(#albert-help-link) .top-actions { flex-wrap: wrap; }
+}
