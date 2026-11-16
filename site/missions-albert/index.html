@@ -148,7 +148,12 @@ async function play(){
       await animate(result.trace[i-1],result.trace[i],token);
     }
     if(token!==generation)return;
-    feedback.textContent=result.erreur?`Arrêt : ${result.erreur}`:result.reussite?'Mission réussie !':'Objectif non atteint : modifiez votre programme.';
+    if(result.reussite){
+      // La pose de victoire utilise la rangée 0 de la feuille : Albert regarde l'élève.
+      current={...result.position,direction:'sud'};
+      paint(current,1);
+    }
+    feedback.textContent=result.erreur?`Arrêt : ${result.erreur}`:result.reussite?'Mission réussie ! Albert vous regarde : laboratoire activé !':'Objectif non atteint : modifiez votre programme.';
   }catch(e){feedback.textContent=e instanceof Error?e.message:'Erreur de programme.';}
   finally{if(token===generation)run.disabled=false;}
 }
