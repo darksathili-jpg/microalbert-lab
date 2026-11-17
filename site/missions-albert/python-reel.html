@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atelier Python réel — Les missions d'Albert</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;background:#eef5fa;color:#18324b}
+*{box-sizing:border-box}body{margin:0}main{max-width:1120px;margin:auto;padding:1.5rem}
+a{color:#17558b}header{margin-bottom:1.5rem}.layout{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+section{background:white;border:1px solid #c4d4e1;border-radius:14px;padding:1.2rem}
+textarea{width:100%;min-height:300px;resize:vertical;font:16px/1.55 Consolas,monospace;background:#f8fbff;color:#18324b;border:2px solid #547ba4;border-radius:8px;padding:1rem;tab-size:4}
+textarea:focus{outline:3px solid #edb23c;outline-offset:2px}
+button{padding:.75rem 1.1rem;background:#1b5798;color:white;border:0;border-radius:8px;font-weight:700;cursor:pointer;margin:.4rem .4rem .4rem 0}
+button:disabled{opacity:.55;cursor:wait}button.secondary{background:#546c85}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;min-height:110px;background:#14283c;color:#e7f8ff;padding:1rem;border-radius:8px}
+.note{background:#fff4d9;padding:.8rem;border-radius:8px}
+label{display:block;font-weight:700;margin:.6rem 0}
+select{width:100%;padding:.65rem;border:1px solid #7b9cb6;border-radius:8px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+</style></head><body><main>
+<header><p><a href="./index.html">← Retour aux missions d'Albert</a></p><h1>Atelier Python réel</h1>
+<p>Après les déplacements d'Albert, expérimente les données, les chaînes de caractères, les listes et les fonctions dans un véritable interpréteur Python.</p></header>
+<div class="layout"><section><label for="lesson">Choisir une activité</label><select id="lesson"></select>
+<h2 id="lesson-title"></h2><p id="goal"></p><p id="hint"></p>
+<label for="code">Programme Python</label><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+<div><button id="run">Exécuter le Python</button><button id="stop" class="secondary">Arrêter</button><button id="reset" class="secondary">Recommencer</button></div>
+</section><section><h2>Console Python</h2><p id="status" role="status" aria-live="polite">Prêt à démarrer.</p><pre id="output" aria-live="polite">La sortie du programme apparaîtra ici.</pre>
+<p class="note">Python est exécuté par Pyodide dans un processus Web Worker distinct, interrompu automatiquement au bout de 8 secondes. Le premier lancement télécharge le moteur Python : une connexion Internet est nécessaire. Aucun compte ni clé API n'est requis.</p>
+<p>Pour chaque activité : prédis d'abord la sortie, exécute ton programme, puis explique ce que tu observes. Un programme sans erreur n'est pas nécessairement un programme correct.</p></section></div>
+</main><script type="module">
+const lessons=[
+{title:'01 — Afficher un résultat',goal:'Découvre print et prédis ce qui sera affiché.',hint:'Que se passe-t-il si tu remplaces 2 + 3 par 2 * 3 ?',code:'print("Bonjour Albert !")\nprint(2 + 3)'},
+{title:'02 — Variables et types',goal:'Affecte une valeur à une variable de type entier puis affiche-la.',hint:'Que renvoie type(energie) ?',code:'energie = 5\nprint(energie)\nprint(type(energie))'},
+{title:'03 — Chaînes de caractères',goal:'Construis un message en combinant des chaînes.',hint:'Pourquoi faut-il convertir un entier avec str() ?',code:'nom = "Albert"\nniveau = 3\nprint(nom + " atteint le niveau " + str(niveau))'},
+{title:'04 — Conditions',goal:'Compare une valeur et affiche un message selon le résultat.',hint:'Que se passe-t-il pour energie = 0 ?',code:'energie = 4\nif energie > 0:\n    print("Déplacement possible")\nelse:\n    print("Batterie vide")'},
+{title:'05 — Boucle bornée',goal:'Utilise for et range pour répéter un affichage.',hint:'Quelles valeurs prend la variable i ?',code:'for i in range(4):\n    print("Étape", i)'},
+{title:'06 — Boucle non bornée',goal:'Comprends la condition d’arrêt d’une boucle while.',hint:'Quelle instruction modifie compteur ?',code:'compteur = 0\nwhile compteur < 3:\n    print(compteur)\n    compteur += 1'},
+{title:'07 — Listes',goal:'Crée une liste, accède à un élément et ajoute une valeur.',hint:'À quel indice se trouve le premier élément ?',code:'mesures = [3, 5, 8]\nprint(mesures[0])\nmesures.append(13)\nprint(mesures)'},
+{title:'08 — Parcourir une liste',goal:'Calcule une somme à l’aide d’un accumulateur.',hint:'À quoi sert la variable total ?',code:'mesures = [3, 5, 8]\ntotal = 0\nfor valeur in mesures:\n    total += valeur\nprint(total)'},
+{title:'09 — Fonctions',goal:'Définis une fonction avec un paramètre et une valeur renvoyée.',hint:'Quelle différence entre return et print ?',code:'def doubler(nombre):\n    return 2 * nombre\n\nprint(doubler(7))'},
+{title:'10 — Tests et cas limites',goal:'Vérifie une fonction avec assert et plusieurs entrées.',hint:'Pourquoi tester aussi zéro ?',code:'def est_pair(nombre):\n    return nombre % 2 == 0\n\nassert est_pair(4) is True\nassert est_pair(3) is False\nassert est_pair(0) is True\nprint("Tests réussis")'}
+];
+const select=document.querySelector('#lesson'),code=document.querySelector('#code'),run=document.querySelector('#run'),stop=document.querySelector('#stop'),reset=document.querySelector('#reset'),status=document.querySelector('#status'),output=document.querySelector('#output');
+let worker=null,sequence=0,timeout=null;
+function shutdown(){if(worker)worker.terminate();worker=null;clearTimeout(timeout);timeout=null;run.disabled=false;}
+function load(n){shutdown();const item=lessons[n];document.querySelector('#lesson-title').textContent=item.title;document.querySelector('#goal').textContent=item.goal;document.querySelector('#hint').textContent='Question pour réfléchir : '+item.hint;code.value=item.code;output.textContent='La sortie du programme apparaîtra ici.';status.textContent='Prêt à démarrer.';}
+select.replaceChildren(...lessons.map((item,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=item.title;return o;}));
+select.addEventListener('change',()=>load(Number(select.value)));
+reset.addEventListener('click',()=>load(Number(select.value)));
+stop.addEventListener('click',()=>{shutdown();sequence++;status.textContent='Exécution interrompue.';});
+run.addEventListener('click',()=>{
+ shutdown();const id=++sequence;run.disabled=true;output.textContent='';status.textContent='Chargement de Python puis exécution…';
+ worker=new Worker('./python-worker.js?v=1');
+ worker.onmessage=event=>{
+  if(event.data.id!==id)return;
+  clearTimeout(timeout);timeout=null;
+  const {error,output:stdout,result}=event.data;
+  output.textContent=error?'Erreur Python :\n'+error:(stdout||result||'(Aucune sortie : utilise print pour afficher une valeur.)');
+  status.textContent=error?'Le programme a signalé une erreur.':'Exécution terminée.';
+  run.disabled=false;
+ };
+ worker.onerror=()=>{shutdown();status.textContent='Impossible de charger Python. Vérifie ta connexion.';output.textContent='Le moteur Pyodide n’a pas pu démarrer.';};
+ timeout=setTimeout(()=>{if(id!==sequence)return;shutdown();status.textContent='Exécution arrêtée après 8 secondes.';output.textContent='Vérifie notamment la condition d’arrêt de ta boucle.';},8000);
+});
+code.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();code.setRangeText('    ',code.selectionStart,code.selectionEnd,'end');}});
+load(0);
+</script></body></html>
