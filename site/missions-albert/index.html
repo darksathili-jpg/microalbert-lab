@@ -81,7 +81,7 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <section><h2>Votre programme</h2>
 <p><a href="./python-reel.html" style="display:inline-block;background:#e5f4ff;color:#124e83;border:2px solid #68a9cf;border-radius:9px;padding:.65rem .9rem;font-weight:750;text-decoration:none">Atelier Python réel : variables, listes, fonctions et tests ↗</a></p>
 <p>Écris des instructions de déplacement, puis découvre les conditions <code>if</code>, les boucles bornées <code>for</code>, les boucles non bornées <code>while</code> et les variables de type entier.</p>
-<details class="catalogue" id="catalogue-actions" open>
+<details class="catalogue" id="catalogue-actions">
 <summary>Catalogue des instructions Python d'Albert — consulter et insérer</summary>
 <p>Choisis une instruction pour comprendre son effet, puis insère un exemple dans ton programme. Les exemples sont à adapter à la mission.</p>
 <p id="catalogue-level" aria-live="polite"></p><label style="font-weight:600;font-size:.88rem"><input id="catalogue-all" type="checkbox"> Afficher toutes les instructions (référence complète)</label><div id="catalogue-content"></div>
@@ -169,9 +169,9 @@ for(const group of CATALOGUE){
   button.addEventListener('click',()=>{
    const start=program.selectionStart,end=program.selectionEnd;
    const before=program.value.slice(0,start),after=program.value.slice(end);
-   const prefix=before.length&&!before.endsWith('\\n')?'\\n':'';
-   const suffix=after.length&&!after.startsWith('\\n')?'\\n':'';
-   program.setRangeText(prefix+snippet+suffix,start,end,'end');
+   const prefix=before.length&&!before.endsWith('\n')?'\n':'';
+   const suffix=after.length&&!after.startsWith('\n')?'\n':'';
+   program.setRangeText(prefix+snippet.replace(/\\\\n/g,'\n')+suffix,start,end,'end');
    program.dispatchEvent(new Event('input',{bubbles:true}));program.focus();
   });
   item.append(signatureEl,descriptionEl,button);grid.append(item);
