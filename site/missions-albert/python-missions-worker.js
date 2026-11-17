@@ -36,12 +36,13 @@ self.onmessage=async ({data})=>{
   scope=py.runPython('dict(__name__="__main__")');
   scope.set('_albert_limit',limit);
   scope.set('_student_code',code);
-  scope.set('_requirements',requirements);
+  scope.set('_requirements_json',JSON.stringify(requirements));
   // Analyse de l'arbre syntaxique Python : les commentaires et chaînes ne valident pas une notion.
   const analysis=`import ast
+import json
 _tree = ast.parse(_student_code)
 _nodes = list(ast.walk(_tree))
-_requirements = _requirements.to_py() if hasattr(_requirements, "to_py") else _requirements
+_requirements = json.loads(_requirements_json)
 if _requirements.get("loop") and not any(isinstance(n, ast.For) for n in _nodes):
     raise ValueError("Cette mission demande une boucle bornée for.")
 if _requirements.get("while") and not any(isinstance(n, ast.While) for n in _nodes):
