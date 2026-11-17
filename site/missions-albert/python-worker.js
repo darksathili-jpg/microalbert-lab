@@ -10,6 +10,11 @@ async function runtime(){
   return pyodidePromise;
 }
 self.onmessage=async event=>{
+  if(event.data?.type==='init'){
+    try{await runtime();self.postMessage({type:'ready'});}
+    catch(error){self.postMessage({type:'init-error',error:String(error?.message||error)});}
+    return;
+  }
   const {id,code}=event.data||{};
   if(typeof code!=='string'||code.length>10000){self.postMessage({id,error:'Programme trop long ou invalide.'});return;}
   try{
