@@ -67,6 +67,7 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 .catalogue-item p{font-size:.82rem;margin:.25rem 0 .5rem}
 .catalogue-item button{font-size:.82rem;margin:0;padding:.4rem .6rem;background:#1e628e}
 .catalogue-item button:focus-visible{outline:3px solid #ed9d22}
+.catalogue-group[hidden],.catalogue-item[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -83,7 +84,7 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <details class="catalogue" id="catalogue-actions" open>
 <summary>Catalogue des instructions Python d'Albert — consulter et insérer</summary>
 <p>Choisis une instruction pour comprendre son effet, puis insère un exemple dans ton programme. Les exemples sont à adapter à la mission.</p>
-<div id="catalogue-content"></div>
+<p id="catalogue-level" aria-live="polite"></p><label style="font-weight:600;font-size:.88rem"><input id="catalogue-all" type="checkbox"> Afficher toutes les instructions (référence complète)</label><div id="catalogue-content"></div>
 <p><strong>Attention :</strong> ce laboratoire utilise un interpréteur pédagogique limité. Les fonctions Python générales comme <code>print()</code>, <code>input()</code> et <code>def</code> s'étudient dans l'<a href="./python-reel.html">atelier Python réel</a>.</p>
 </details>
 <label for="program">Instructions de déplacement</label>
@@ -155,6 +156,7 @@ const CATALOGUE=[
   ['==, !=, <, >, <=, >=','Compare des valeurs. = affecte ; == compare.','energie = 3\\nif energie >= 2:\\n    albert.avancer()']]}
 ];
 const catalogueRoot=document.querySelector('#catalogue-content');
+const catalogueSections=[];
 for(const group of CATALOGUE){
  const section=document.createElement('section');section.className='catalogue-group';
  const heading=document.createElement('h3');heading.textContent=group.titre;section.append(heading);
@@ -174,7 +176,7 @@ for(const group of CATALOGUE){
   });
   item.append(signatureEl,descriptionEl,button);grid.append(item);
  }
- section.append(grid);catalogueRoot.append(section);
+ section.append(grid);catalogueRoot.append(section);catalogueSections.push(section);
 }
 
 let indexMission=0;
@@ -309,6 +311,28 @@ function cancelEffects(){
   activeEffects=[];
   board.querySelectorAll('.absorb-chip,.absorb-aura').forEach(el=>el.remove());
 }
+function adapterCatalogue(n){
+ // Les trois actions de déplacement restent accessibles dans toutes les missions.
+ // La découverte est progressive ; une option explicite permet de consulter le catalogue complet.
+ const level=n<4?0:n<5?1:n<8?2:n<16?3:4;
+ for(let i=0;i<catalogueSections.length;i++){
+   catalogueSections[i].hidden=(i===1&&level===0)||(i===2&&level<3);
+ }
+ const groups=catalogueSections[1]?.querySelectorAll('.catalogue-item')||[];
+ // Variables dès la mission 6, boucles bornées dès la mission 5, non bornées dès la mission 17.
+ for(const [i,item] of [...groups].entries()){
+   item.hidden=(i===0&&level<2)||(i===1&&level<1)||(i===2&&level<4)||(i>=3&&level<2);
+ }
+ const decision=catalogueSections[2]?.querySelectorAll('.catalogue-item')||[];
+ for(const [i,item] of [...decision].entries()){
+   item.hidden=(i===1&&n<9)||(i===2&&n<11)||(i===3&&n<13);
+ }
+ document.querySelector('#catalogue-level').textContent='Outils proposés pour la mission '+(n+1)+'.';
+ if(document.querySelector('#catalogue-all').checked){
+   for(const section of catalogueSections){section.hidden=false;section.querySelectorAll('.catalogue-item').forEach(item=>item.hidden=false);}
+ }
+}
+document.querySelector('#catalogue-all').addEventListener('change',()=>adapterCatalogue(indexMission));
 function chargerMission(n){
   generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;
   indexMission=n;
@@ -321,6 +345,7 @@ function chargerMission(n){
   missionGoal.textContent=item.objectif;
   missionHelp.textContent=item.aide;
   missionSelect.value=String(n);
+ adapterCatalogue(n);
   const done=JSON.parse(localStorage.getItem(sauvegarde)||'[]');
   progress.textContent='Progression : '+done.length+' / '+MISSIONS_SNT.length+' missions réussies';
   program.value=localStorage.getItem('microalbert-snt-code-'+n)??item.departCode;
