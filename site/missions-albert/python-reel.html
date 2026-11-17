@@ -28,7 +28,7 @@ select{width:100%;padding:.65rem;border:1px solid #7b9cb6;border-radius:8px}
 .code-legend{font-size:.82rem;color:#405d76;margin:.5rem 0}
 </style></head><body><main>
 <header><p><a href="./index.html">← Retour aux missions d'Albert</a></p><h1>Atelier Python réel</h1>
-<p>Après les déplacements d'Albert, expérimente les données, les chaînes de caractères, les listes et les fonctions dans un véritable interpréteur Python.</p></header>
+<p>Après les déplacements d'Albert, progresse dans dix-huit activités sur les données, les chaînes de caractères, les listes, les fonctions et les tests dans un véritable interpréteur Python.</p></header>
 <div class="layout"><section><label for="lesson">Choisir une activité</label><select id="lesson"></select>
 <h2 id="lesson-title"></h2><p id="goal"></p><p id="hint"></p>
 <label for="code">Programme Python</label><div class="code-editor"><pre id="code-colors" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="code-legend"></textarea></div><p id="code-legend" class="code-legend">Mots-clés violets · fonctions bleues · chaînes vertes · nombres orange · commentaires vert olive. Tabulation : 4 espaces.</p>
@@ -47,7 +47,15 @@ const lessons=[
 {title:'07 — Listes',goal:'Crée une liste, accède à un élément et ajoute une valeur.',hint:'À quel indice se trouve le premier élément ?',code:'mesures = [3, 5, 8]\nprint(mesures[0])\nmesures.append(13)\nprint(mesures)'},
 {title:'08 — Parcourir une liste',goal:'Calcule une somme à l’aide d’un accumulateur.',hint:'À quoi sert la variable total ?',code:'mesures = [3, 5, 8]\ntotal = 0\nfor valeur in mesures:\n    total += valeur\nprint(total)'},
 {title:'09 — Fonctions',goal:'Définis une fonction avec un paramètre et une valeur renvoyée.',hint:'Quelle différence entre return et print ?',code:'def doubler(nombre):\n    return 2 * nombre\n\nprint(doubler(7))'},
-{title:'10 — Tests et cas limites',goal:'Vérifie une fonction avec assert et plusieurs entrées.',hint:'Pourquoi tester aussi zéro ?',code:'def est_pair(nombre):\n    return nombre % 2 == 0\n\nassert est_pair(4) is True\nassert est_pair(3) is False\nassert est_pair(0) is True\nprint("Tests réussis")'}
+{title:'10 — Tests et cas limites',goal:'Vérifie une fonction avec assert et plusieurs entrées.',hint:'Pourquoi tester aussi zéro ?',code:'def est_pair(nombre):\n    return nombre % 2 == 0\n\nassert est_pair(4) is True\nassert est_pair(3) is False\nassert est_pair(0) is True\nprint("Tests réussis")'},
+{"title":"11 — Lire une saisie simulée","goal":"Comprends input(), la conversion int() et la différence entre texte et entier. Pour éviter une boîte de dialogue bloquante, remplace provisoirement input par une fonction simulée.","hint":"Pourquoi int('12') + 3 vaut-il 15, mais '12' + '3' donne-t-il '123' ?","code":"# Dans cette activité, input est simulée pour les tests.\ndef input(message):\n    print(message)\n    return '12'\n\nage = int(input('Quel âge as-tu ?'))\nprint(age + 3)"},
+{"title":"12 — Indices et tranches","goal":"Manipule une chaîne par indice et par tranche.","hint":"Quel est l'indice du premier caractère ? Que renvoie mot[1:4] ?","code":"mot = 'ALBERT'\nprint(mot[0])\nprint(mot[1:4])\n# Affiche les trois derniers caractères."},
+{"title":"13 — Construire une liste","goal":"Utilise une liste vide, append() et une boucle bornée.","hint":"Quelle est la valeur de len(valeurs) après la boucle ?","code":"valeurs = []\nfor i in range(4):\n    valeurs.append(i * 2)\nprint(valeurs)\n# Affiche la longueur de la liste."},
+{"title":"14 — Chercher une valeur","goal":"Détermine si une valeur appartient à une liste avec in.","hint":"Comment distinguer une valeur présente d'une valeur absente ?","code":"capteurs = [4, 7, 10, 13]\nrecherche = 10\nif recherche in capteurs:\n    print('Présent')\nelse:\n    print('Absent')\n# Teste avec recherche = 8."},
+{"title":"15 — Maximum d'une liste","goal":"Construis un algorithme de recherche du maximum sans utiliser max().","hint":"À quoi faut-il initialiser le maximum avant de parcourir les autres éléments ?","code":"mesures = [4, 9, 2, 12, 7]\nplus_grand = mesures[0]\nfor valeur in mesures:\n    if valeur > plus_grand:\n        plus_grand = valeur\nprint(plus_grand)\n# Teste avec une liste de nombres négatifs."},
+{"title":"16 — Fonction et paramètres","goal":"Écris une fonction qui renvoie une valeur sans l'afficher elle-même.","hint":"Pourquoi return est-il nécessaire si on veut réutiliser le résultat ?","code":"def aire_rectangle(longueur, largeur):\n    return longueur * largeur\n\nprint(aire_rectangle(4, 3))\n# Ajoute un deuxième appel avec d'autres dimensions."},
+{"title":"17 — Tester les cas limites","goal":"Vérifie une fonction avec des assertions et des entrées différentes.","hint":"Quels cas tester pour une liste vide, une liste d'un élément et une liste plus longue ?","code":"def longueur(liste):\n    return len(liste)\n\nassert longueur([]) == 0\nassert longueur([5]) == 1\n# Ajoute un test avec trois éléments.\nprint('Tests terminés')"},
+{"title":"18 — Mini-projet : laboratoire","goal":"Combine fonction, liste, boucle bornée et structure conditionnelle pour analyser des mesures.","hint":"Comment compter les mesures supérieures ou égales à un seuil ?","code":"def compter_alertes(mesures, seuil):\n    compteur = 0\n    for mesure in mesures:\n        if mesure >= seuil:\n            compteur += 1\n    return compteur\n\nreleves = [12, 18, 9, 21, 15]\nprint(compter_alertes(releves, 16))\n# Ajoute des assertions pour vérifier le résultat."}
 ];
 const select=document.querySelector('#lesson'),code=document.querySelector('#code'),run=document.querySelector('#run'),stop=document.querySelector('#stop'),reset=document.querySelector('#reset'),status=document.querySelector('#status'),output=document.querySelector('#output');
 let worker=null,sequence=0,timeout=null,ready=false,loading=false;
@@ -76,7 +84,7 @@ function refreshColors(){
   colors.innerHTML=colorize(code.value);
   colors.scrollTop=code.scrollTop;colors.scrollLeft=code.scrollLeft;
 }
-code.addEventListener('input',refreshColors);
+code.addEventListener('input',()=>{refreshColors();localStorage.setItem('microalbert-python-code-'+select.value,code.value);});
 code.addEventListener('scroll',refreshColors);
 
 function shutdown(){
@@ -90,7 +98,7 @@ function load(n){
  document.querySelector('#lesson-title').textContent=item.title;
  document.querySelector('#goal').textContent=item.goal;
  document.querySelector('#hint').textContent='Question pour réfléchir : '+item.hint;
- code.value=item.code;refreshColors();
+ code.value=localStorage.getItem('microalbert-python-code-'+n)??item.code;refreshColors();
  output.textContent='La sortie du programme apparaîtra ici.';
  status.textContent='Prêt à démarrer.';
 }
@@ -98,7 +106,7 @@ select.replaceChildren(...lessons.map((item,i)=>{
  const o=document.createElement('option');o.value=String(i);o.textContent=item.title;return o;
 }));
 select.addEventListener('change',()=>load(Number(select.value)));
-reset.addEventListener('click',()=>load(Number(select.value)));
+reset.addEventListener('click',()=>{localStorage.removeItem('microalbert-python-code-'+select.value);load(Number(select.value));});
 stop.addEventListener('click',()=>{
  sequence++;shutdown();status.textContent='Chargement ou exécution interrompu.';
 });
