@@ -27,10 +27,11 @@ def _albert_eval():
     if __albert_lesson not in evaluations:
         return {"supported":False,"message":"Cette activité est en mode exploration ; aucune validation automatique n'est encore disponible."}
     name, checks = evaluations[__albert_lesson]
-    try:
-        tests=checks()
-        return {"supported":True,"name":name,"passed":sum(bool(ok) for ok,_ in tests),"total":len(tests),
-                "checks":[{"label":label,"ok":bool(ok)} for ok,label in tests]}
-    except Exception as exc:
-        return {"supported":True,"name":name,"passed":0,"total":3,"error":type(exc).__name__+": "+str(exc)}
+    results=[]
+    for test in checks():
+        ok,label=test
+        results.append({"label":label,"ok":bool(ok)})
+    return {"supported":True,"name":name,"passed":sum(item["ok"] for item in results),
+            "total":len(results),"checks":results}
+
 print("__ALBERT_EVAL__"+json.dumps(_albert_eval(),ensure_ascii=False))
