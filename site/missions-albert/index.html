@@ -39,17 +39,17 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <p id="feedback" role="status" aria-live="polite">Albert attend vos instructions.</p>
 <p class="subtitle">Les coordonnées commencent à (0, 0) en haut à gauche.</p><details><summary>Un indice, sans donner la réponse</summary><p id="mission-help"></p></details><button id="next-mission" type="button" hidden>Mission suivante →</button></section>
 <section><h2>Votre programme</h2>
-<p>Écris des instructions de déplacement, puis découvre la <strong>boucle bornée</strong> <code>for</code> et les variables de type entier.</p>
+<p>Écris des instructions de déplacement, puis découvre les conditions <code>if</code>, les boucles bornées <code>for</code>, les boucles non bornées <code>while</code> et les variables de type entier.</p>
 <label for="program">Instructions de déplacement</label>
 <textarea id="program" spellcheck="false"></textarea>
 <div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
-<p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, conditions if / elif / else, boucles bornées et affectations). Il n’exécute pas encore du Python général avec Pyodide.</p>
+<p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, conditions if / elif / else, boucles for et while, affectations et compteurs). Il n’exécute pas encore du Python général avec Pyodide.</p>
 <p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
 </div></main>
 <script type="module">
 import { executerMission } from './moteur.mjs';
-import { MISSIONS_SNT } from './parcours-snt.mjs';
-import { interpreterProgramme } from './interpreteur.mjs';
+import { MISSIONS_SNT } from './parcours-snt.mjs?v=20261117-while-fix-2';
+import { interpreterProgramme } from './interpreteur.mjs?v=20261117-while-fix-2';
 const board=document.querySelector('#board'), feedback=document.querySelector('#feedback');
 const missionTitle=document.querySelector('#mission-title'),missionNotion=document.querySelector('#mission-notion'),missionGoal=document.querySelector('#mission-goal'),missionHelp=document.querySelector('#mission-help');
 const missionSelect=document.querySelector('#mission-select'),nextMission=document.querySelector('#next-mission'),progress=document.querySelector('#mission-progress');
