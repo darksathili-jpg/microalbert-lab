@@ -29,7 +29,8 @@ self.onmessage=async event=>{
     const output=[];
     py.setStdout({batched:s=>output.push(s)});
     py.setStderr({batched:s=>output.push(s)});
-    const result=await py.runPythonAsync(code);
+    const scope=py.runPython('dict(__name__="__main__")');
+    const result=await py.runPythonAsync(code,{globals:scope});
     let evaluation=null;
     if(verify){
       try{
@@ -38,7 +39,7 @@ self.onmessage=async event=>{
         const source=await response.text();
         const evalOutput=[];
         py.setStdout({batched:line=>evalOutput.push(line)});
-        await py.runPythonAsync('__albert_lesson = '+Number(lesson)+'\n'+source);
+        await py.runPythonAsync('__albert_lesson = '+Number(lesson)+'\n'+source,{globals:scope});
         const marker=evalOutput.find(line=>line.startsWith('__ALBERT_EVAL__'));
         if(!marker)throw new Error('Résultat des tests absent.');
         evaluation=JSON.parse(marker.slice('__ALBERT_EVAL__'.length));
@@ -46,6 +47,7 @@ self.onmessage=async event=>{
     }
     self.postMessage({id,output:output.join('\n'),result:result===undefined||result===null?'':String(result),evaluation});
     if(result&&typeof result.destroy==='function')result.destroy();
+    scope.destroy();
   }catch(error){
     self.postMessage({id,error:String(error&&error.message||error)});
   }
