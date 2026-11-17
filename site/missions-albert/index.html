@@ -89,8 +89,8 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 </details>
 <label for="program">Instructions de déplacement</label>
 <div class="editor-shell"><pre id="syntax-highlight" aria-hidden="true"></pre><textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-help"></textarea></div><p class="editor-help" id="editor-help">Mots-clés violets · commandes bleues · nombres orange · commentaires verts. Tabulation : quatre espaces.</p>
-<div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
-<p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, conditions if / elif / else, boucles for et while, affectations et compteurs). Il n’exécute pas encore du Python général avec Pyodide.</p>
+<label for="execution-mode">Moteur d’exécution</label><select id="execution-mode" style="display:block;width:100%;padding:.55rem;margin:.4rem 0"><option value="guided">Guidé — interpréteur pédagogique</option><option value="python">Python réel — expérimental (Pyodide)</option></select><p id="python-mode-help" class="editor-help">Mode guidé : contrôles des notions demandées par chaque mission.</p><pre id="python-console" aria-live="polite" hidden style="white-space:pre-wrap;background:#edf4fb;padding:.7rem;border-radius:8px"></pre><div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
+<p class="notice"><strong>Deux modes :</strong> le mode guidé conserve les contrôles pédagogiques des 20 missions. Le mode Python réel, expérimental, permet aussi <code>print()</code> et <code>def</code> ; il nécessite le téléchargement de Pyodide et ne remplace pas les validations pédagogiques du mode guidé. Les déplacements restent contrôlés par le moteur du laboratoire. <code>input()</code> interactif n’est pas encore pris en charge.</p>
 <p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
 </div></main>
 <script type="module">
@@ -334,7 +334,7 @@ function adapterCatalogue(n){
 }
 document.querySelector('#catalogue-all').addEventListener('change',()=>adapterCatalogue(indexMission));
 function chargerMission(n){
-  generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;
+  generation++;stopPython();cancelAnimationFrame(raf);cancelEffects();run.disabled=false;
   indexMission=n;
   const item=MISSIONS_SNT[n];
   mission={largeur:item.largeur,hauteur:item.hauteur,depart:item.depart,objectif:item.cible,
@@ -361,15 +361,66 @@ missionSelect.replaceChildren(...MISSIONS_SNT.map((item,i)=>{
 missionSelect.addEventListener('change',()=>chargerMission(Number(missionSelect.value)));
 nextMission.addEventListener('click',()=>chargerMission(Math.min(indexMission+1,MISSIONS_SNT.length-1)));
 program.addEventListener('input',()=>localStorage.setItem('microalbert-snt-code-'+indexMission,program.value));
+const executionMode=document.querySelector('#execution-mode');
+const pythonModeHelp=document.querySelector('#python-mode-help');
+const pythonConsole=document.querySelector('#python-console');
+let pythonWorker=null,pythonReady=false;
+executionMode.addEventListener('change',()=>{
+ pythonModeHelp.textContent=executionMode.value==='python'
+ ?'Python réel : fonctions et affichages disponibles. Premier chargement potentiellement long. Les exigences de structure des missions ne sont pas encore vérifiées dans ce mode.'
+ :'Mode guidé : contrôles des notions demandées par chaque mission.';
+ pythonConsole.hidden=true;
+});
+function stopPython(){if(pythonWorker)pythonWorker.terminate();pythonWorker=null;pythonReady=false;}
+function executePython(code,limit,token){
+ return new Promise((resolve,reject)=>{
+  if(token!==generation){reject(Error('Exécution annulée.'));return;}
+  let worker=pythonWorker;
+  if(!worker){worker=new Worker('./python-missions-worker.js?v=1');pythonWorker=worker;}
+  let timer;
+  const cleanup=()=>{clearTimeout(timer);worker.onmessage=null;worker.onerror=null;};
+  const fail=error=>{cleanup();stopPython();reject(error);};
+  worker.onerror=()=>fail(Error('Impossible de charger le moteur Python.'));
+  worker.onmessage=event=>{
+   const data=event.data||{};
+   if(token!==generation){fail(Error('Exécution annulée.'));return;}
+   if(data.type==='loading'){feedback.textContent=data.message;return;}
+   if(data.type==='init-error'){fail(Error(data.error));return;}
+   if(data.type==='ready'){
+    pythonReady=true;clearTimeout(timer);
+    timer=setTimeout(()=>fail(Error('Exécution Python interrompue après 8 secondes.')),8000);
+    worker.postMessage({type:'run',id:token,code,limit});return;
+   }
+   if(data.id!==token)return;
+   cleanup();
+   if(data.error){reject(Error(data.error));return;}
+   resolve(data);
+  };
+  if(!pythonReady){
+   timer=setTimeout(()=>fail(Error('Chargement de Python trop long (60 secondes).')),60000);
+   worker.postMessage({type:'init'});
+  }else{
+   timer=setTimeout(()=>fail(Error('Exécution Python interrompue après 8 secondes.')),8000);
+   worker.postMessage({type:'run',id:token,code,limit});
+  }
+ });
+}
 async function play(){
   const token=++generation;run.disabled=true;feedback.textContent='Exécution en cours…';
   try{
-    const parsed=interpreterProgramme(program.value,mission.limiteInstructions);
+    const realPython=executionMode.value==='python';
+    let parsed;
+    if(realPython){
+      const result=await executePython(program.value,mission.limiteInstructions,token);
+      pythonConsole.hidden=false;
+      pythonConsole.textContent=result.output||'(Aucun affichage Python)';
+      parsed={commands:result.commands};
+    }else parsed=interpreterProgramme(program.value,mission.limiteInstructions);
     const item=MISSIONS_SNT[indexMission];
-    if(item.exigeBoucle&&!parsed.hasLoop)throw Error('Cette mission demande une boucle bornée for.');
-    if(item.exigeVariable&&!parsed.hasVariable)throw Error('Cette mission demande une affectation à une variable de type entier.');
-    if(item.exigeCondition&&!parsed.hasCondition)throw Error('Cette mission demande une structure conditionnelle if.');
-    if(item.exigeWhile&&!parsed.hasWhile)throw Error('Cette mission demande une boucle non bornée while.');
+    if(!realPython&&item.exigeBoucle&&!parsed.hasLoop)throw Error('Cette mission demande une boucle bornée for.');
+    if(!realPython&&item.exigeVariable&&!parsed.hasVariable)throw Error('Cette mission demande une affectation à une variable de type entier.');
+    if(!realPython&&item.exigeCondition&&!parsed.hasCondition)throw Error('Cette mission demande une structure conditionnelle if.');
+    if(!realPython&&item.exigeWhile&&!parsed.hasWhile)throw Error('Cette mission demande une boucle non bornée while.');
     const result=executerMission(mission,parsed.commands);
     draw(result.trace[0]);
     for(let i=1;i<result.trace.length;i++){
@@ -396,7 +447,7 @@ async function play(){
   finally{if(token===generation)run.disabled=false;}
 }
 run.addEventListener('click',play);
-reset.addEventListener('click',()=>{generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;draw(mission.depart);feedback.textContent='Albert attend vos instructions.';nextMission.hidden=true;});
+reset.addEventListener('click',()=>{stopPython();pythonConsole.hidden=true;generation++;cancelAnimationFrame(raf);cancelEffects();run.disabled=false;draw(mission.depart);feedback.textContent='Albert attend vos instructions.';nextMission.hidden=true;});
 chargerMission(0);
 </script>
 </body></html>
