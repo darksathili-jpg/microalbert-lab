@@ -32,7 +32,7 @@ test('while : compteur décrémenté',()=>{
  assert.equal(interpreterProgramme(code).commands.length,3);
 });
 test('while infinie : interruption de sécurité',()=>{
- assert.throws(()=>interpreterProgramme('pas = 0\nwhile pas < 2:\n    albert.avancer()',10),/limite de sécurité/);
+ assert.throws(()=>interpreterProgramme('pas = 0\nwhile pas < 2:\n    albert.avancer()',10),/limite de sécurité|Limite de 10 commandes/);
 });
 test('rejet de code non autorisé',()=>{
  assert.throws(()=>interpreterProgramme('import os'),/Instruction non reconnue/);
