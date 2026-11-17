@@ -90,7 +90,7 @@ code.addEventListener('scroll',refreshColors);
 function shutdown(){
  if(worker)worker.terminate();
  worker=null;ready=false;loading=false;
- clearTimeout(timeout);timeout=null;run.disabled=false;
+ clearTimeout(timeout);timeout=null;run.disabled=false;document.querySelector('#verify').disabled=false;
 }
 function load(n){
  shutdown();
@@ -130,12 +130,12 @@ function start(verify){
  requestedVerify=verify;
  if(loading)return;
  const id=++sequence;
- run.disabled=true;output.textContent='';
+ run.disabled=true;verifyButton.disabled=true;output.textContent='';
  if(worker&&ready){execute(id);return;}
  if(worker){shutdown();}
  status.textContent='Initialisation de Python : téléchargement du moteur au premier lancement…';
  loading=true;ready=false;run.disabled=true;
- try{worker=new Worker('./python-worker.js?v=PY-20261117-EVAL1');}
+ try{worker=new Worker('./python-worker.js?v=PY-20261117-EVAL2');}
  catch(error){shutdown();status.textContent='Impossible de créer le moteur Python.';output.textContent=String(error);return;}
  worker.onmessage=event=>{
   const data=event.data||{};
@@ -159,14 +159,14 @@ function start(verify){
     if(!evaluation.supported)panel.textContent=evaluation.message;
     else {
       panel.textContent='Tests : '+evaluation.passed+' / '+evaluation.total+' réussis. '+(evaluation.error||evaluation.checks.map(t=>(t.ok?'✓ ':'✗ ')+t.label).join(' · '));
-      if(evaluation.passed===evaluation.total){
+      if(evaluation.passed===evaluation.total&&evaluation.total>0){
         const passed=new Set(JSON.parse(localStorage.getItem('microalbert-python-tests-v1')||'[]'));
         passed.add(Number(select.value));localStorage.setItem('microalbert-python-tests-v1',JSON.stringify([...passed]));
         panel.textContent+=' Programme vérifié sur plusieurs cas (maîtrise à confirmer par transfert).';
       }
     }
   }else panel.textContent='Programme exécuté : cela ne prouve pas encore qu’il est correct. Utilise « Vérifier ma solution ».';
-  run.disabled=false;
+  run.disabled=false;verifyButton.disabled=false;
  };
  worker.onerror=()=>{
   shutdown();status.textContent='Impossible de charger Python.';
