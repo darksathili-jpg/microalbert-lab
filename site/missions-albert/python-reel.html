@@ -33,7 +33,7 @@ select{width:100%;padding:.65rem;border:1px solid #7b9cb6;border-radius:8px}
 <h2 id="lesson-title"></h2><p id="goal"></p><p id="hint"></p>
 <label for="code">Programme Python</label><div class="code-editor"><pre id="code-colors" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="code-legend"></textarea></div><p id="code-legend" class="code-legend">Mots-clés violets · fonctions bleues · chaînes vertes · nombres orange · commentaires vert olive. Tabulation : 4 espaces.</p>
 <div><button id="run">Exécuter le Python</button><button id="stop" class="secondary">Arrêter</button><button id="reset" class="secondary">Recommencer</button></div>
-</section><section><h2>Console Python</h2><p id="status" role="status" aria-live="polite">Prêt à démarrer.</p><pre id="output" aria-live="polite">La sortie du programme apparaîtra ici.</pre>
+</section><section><h2>Console Python</h2><p id="runtime-version" style="font-size:.8rem;color:#4b6378">Version de diagnostic : PY-20261117-R3</p><p id="status" role="status" aria-live="polite">Prêt à démarrer.</p><pre id="output" aria-live="polite">La sortie du programme apparaîtra ici.</pre>
 <p class="note">Python est exécuté par Pyodide dans un processus Web Worker distinct, avec une limite de 8 secondes pour l'exécution, après son initialisation. Le premier lancement télécharge le moteur Python : une connexion Internet est nécessaire. Aucun compte ni clé API n'est requis.</p>
 <p>Pour chaque activité : prédis d'abord la sortie, exécute ton programme, puis explique ce que tu observes. Un programme sans erreur n'est pas nécessairement un programme correct.</p></section></div>
 </main><script type="module">
@@ -110,7 +110,7 @@ function execute(id){
  timeout=setTimeout(()=>{
   if(id!==sequence)return;
   shutdown();sequence++;
-  status.textContent='Exécution arrêtée après 8 secondes.';
+  status.textContent='Programme Python interrompu après 8 secondes (moteur déjà chargé).';
   output.textContent='Le programme prend trop de temps. Vérifie notamment les boucles et leurs conditions d’arrêt.';
  },8000);
 }
@@ -122,10 +122,11 @@ run.addEventListener('click',()=>{
  if(worker){shutdown();}
  status.textContent='Initialisation de Python : téléchargement du moteur au premier lancement…';
  loading=true;ready=false;run.disabled=true;
- try{worker=new Worker('./python-worker.js?v=2');}
+ try{worker=new Worker('./python-worker.js?v=PY-20261117-R3');}
  catch(error){shutdown();status.textContent='Impossible de créer le moteur Python.';output.textContent=String(error);return;}
  worker.onmessage=event=>{
   const data=event.data||{};
+  if(data.type==='loading'){status.textContent=data.message;return;}
   if(data.type==='ready'){
    clearTimeout(timeout);timeout=null;loading=false;ready=true;
    execute(id);return;
@@ -150,7 +151,7 @@ run.addEventListener('click',()=>{
   if(id!==sequence||ready)return;
   shutdown();sequence++;
   status.textContent='Chargement de Python trop long (60 secondes).';
-  output.textContent='Le moteur Python n’a pas pu être initialisé. Vérifie la connexion Internet et réessaie.';
+  output.textContent='Le moteur Python n’a pas pu être initialisé. Vérifie la connexion aux serveurs de Pyodide, puis réessaie. Ce délai concerne le chargement, pas ton programme.';
  },60000);
 });
 code.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();code.setRangeText('    ',code.selectionStart,code.selectionEnd,'end');code.dispatchEvent(new Event('input',{bubbles:true}));}});
