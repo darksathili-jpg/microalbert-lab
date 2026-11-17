@@ -15,12 +15,23 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;min-height:110px;background:#142
 label{display:block;font-weight:700;margin:.6rem 0}
 select{width:100%;padding:.65rem;border:1px solid #7b9cb6;border-radius:8px}
 @media(max-width:760px){.layout{grid-template-columns:1fr}}
+
+/* Éditeur Python : surlignage superposé sans modifier le texte saisi. */
+.code-editor{position:relative;min-height:300px;border:2px solid #547ba4;border-radius:8px;background:#f8fbff;overflow:hidden}
+.code-editor:focus-within{outline:3px solid #edb23c;outline-offset:2px}
+.code-editor #code,.code-editor #code-colors{margin:0;box-sizing:border-box;width:100%;height:320px;min-height:300px;max-height:650px;padding:16px;font:16px/1.55 Consolas,"Liberation Mono",monospace;letter-spacing:0;tab-size:4;white-space:pre;overflow:auto;overflow-wrap:normal;word-break:normal}
+.code-editor #code-colors{position:absolute;inset:0;z-index:1;pointer-events:none;border:0;border-radius:0;background:transparent;color:#23374e;min-height:0}
+.code-editor #code{position:relative;z-index:2;display:block;resize:vertical;border:0;border-radius:0;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#153553}
+.code-editor #code:focus{outline:none}
+.code-editor #code::selection{background:#9ac4f288;-webkit-text-fill-color:transparent}
+.py-keyword{color:#7136b5;font-weight:800}.py-builtin{color:#0066a1;font-weight:750}.py-number{color:#b14d10;font-weight:700}.py-string{color:#0b784d}.py-comment{color:#61734b;font-style:italic}.py-operator{color:#a43e28;font-weight:700}.py-boolean{color:#a22c85;font-weight:750}.py-function{color:#135c77;font-weight:750}
+.code-legend{font-size:.82rem;color:#405d76;margin:.5rem 0}
 </style></head><body><main>
 <header><p><a href="./index.html">← Retour aux missions d'Albert</a></p><h1>Atelier Python réel</h1>
 <p>Après les déplacements d'Albert, expérimente les données, les chaînes de caractères, les listes et les fonctions dans un véritable interpréteur Python.</p></header>
 <div class="layout"><section><label for="lesson">Choisir une activité</label><select id="lesson"></select>
 <h2 id="lesson-title"></h2><p id="goal"></p><p id="hint"></p>
-<label for="code">Programme Python</label><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+<label for="code">Programme Python</label><div class="code-editor"><pre id="code-colors" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="code-legend"></textarea></div><p id="code-legend" class="code-legend">Mots-clés violets · fonctions bleues · chaînes vertes · nombres orange · commentaires vert olive. Tabulation : 4 espaces.</p>
 <div><button id="run">Exécuter le Python</button><button id="stop" class="secondary">Arrêter</button><button id="reset" class="secondary">Recommencer</button></div>
 </section><section><h2>Console Python</h2><p id="status" role="status" aria-live="polite">Prêt à démarrer.</p><pre id="output" aria-live="polite">La sortie du programme apparaîtra ici.</pre>
 <p class="note">Python est exécuté par Pyodide dans un processus Web Worker distinct, interrompu automatiquement au bout de 8 secondes. Le premier lancement télécharge le moteur Python : une connexion Internet est nécessaire. Aucun compte ni clé API n'est requis.</p>
@@ -40,8 +51,36 @@ const lessons=[
 ];
 const select=document.querySelector('#lesson'),code=document.querySelector('#code'),run=document.querySelector('#run'),stop=document.querySelector('#stop'),reset=document.querySelector('#reset'),status=document.querySelector('#status'),output=document.querySelector('#output');
 let worker=null,sequence=0,timeout=null;
+const colors=document.querySelector('#code-colors');
+const htmlEscape=value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function colorize(source){
+  // Analyse lexicale pour l'affichage seulement : jamais d'évaluation du code.
+  const token=/#[^\n]*|(?:\"\"\"[\s\S]*?\"\"\"|'''[\s\S]*?'''|\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*')|\b(?:False|True|None)\b|\b(?:if|elif|else|for|while|in|and|or|not|def|return|import|from|as|break|continue|pass|is|assert|try|except|finally|with|lambda|class)\b|\b(?:print|range|len|int|float|str|list|type|sum|enumerate|input|bool)\b|\b\d+(?:\.\d+)?\b|(?:==|!=|<=|>=|\+=|-=|\*=|\/=|\*\*|\/\/|[+*\/%=<>-])/g;
+  let result='',previous=0,match;
+  while((match=token.exec(source))){
+    result+=htmlEscape(source.slice(previous,match.index));
+    const value=match[0];
+    let kind='operator';
+    if(value.startsWith('#'))kind='comment';
+    else if(value.startsWith('"')||value.startsWith("'"))kind='string';
+    else if(/^(True|False|None)$/.test(value))kind='boolean';
+    else if(/^\d/.test(value))kind='number';
+    else if(/^(print|range|len|int|float|str|list|type|sum|enumerate|input|bool)$/.test(value))kind='builtin';
+    else if(/^[A-Za-z_]/.test(value))kind='keyword';
+    result+='<span class="py-'+kind+'">'+htmlEscape(value)+'</span>';
+    previous=match.index+value.length;
+  }
+  return result+htmlEscape(source.slice(previous))+'\n';
+}
+function refreshColors(){
+  colors.innerHTML=colorize(code.value);
+  colors.scrollTop=code.scrollTop;colors.scrollLeft=code.scrollLeft;
+}
+code.addEventListener('input',refreshColors);
+code.addEventListener('scroll',refreshColors);
+
 function shutdown(){if(worker)worker.terminate();worker=null;clearTimeout(timeout);timeout=null;run.disabled=false;}
-function load(n){shutdown();const item=lessons[n];document.querySelector('#lesson-title').textContent=item.title;document.querySelector('#goal').textContent=item.goal;document.querySelector('#hint').textContent='Question pour réfléchir : '+item.hint;code.value=item.code;output.textContent='La sortie du programme apparaîtra ici.';status.textContent='Prêt à démarrer.';}
+function load(n){shutdown();const item=lessons[n];document.querySelector('#lesson-title').textContent=item.title;document.querySelector('#goal').textContent=item.goal;document.querySelector('#hint').textContent='Question pour réfléchir : '+item.hint;code.value=item.code;refreshColors();output.textContent='La sortie du programme apparaîtra ici.';status.textContent='Prêt à démarrer.';}
 select.replaceChildren(...lessons.map((item,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=item.title;return o;}));
 select.addEventListener('change',()=>load(Number(select.value)));
 reset.addEventListener('click',()=>load(Number(select.value)));
@@ -60,6 +99,6 @@ run.addEventListener('click',()=>{
  worker.onerror=()=>{shutdown();status.textContent='Impossible de charger Python. Vérifie ta connexion.';output.textContent='Le moteur Pyodide n’a pas pu démarrer.';};
  timeout=setTimeout(()=>{if(id!==sequence)return;shutdown();status.textContent='Exécution arrêtée après 8 secondes.';output.textContent='Vérifie notamment la condition d’arrêt de ta boucle.';},8000);
 });
-code.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();code.setRangeText('    ',code.selectionStart,code.selectionEnd,'end');}});
+code.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();code.setRangeText('    ',code.selectionStart,code.selectionEnd,'end');code.dispatchEvent(new Event('input',{bubbles:true}));}});
 load(0);
 </script></body></html>
