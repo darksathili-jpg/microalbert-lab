@@ -171,7 +171,7 @@ for(const group of CATALOGUE){
    const before=program.value.slice(0,start),after=program.value.slice(end);
    const prefix=before.length&&!before.endsWith('\n')?'\n':'';
    const suffix=after.length&&!after.startsWith('\n')?'\n':'';
-   program.setRangeText(prefix+snippet.replace(/\\\\n/g,'\n')+suffix,start,end,'end');
+   program.setRangeText(prefix+snippet.replace(/\\n/g,'\n')+suffix,start,end,'end');
    program.dispatchEvent(new Event('input',{bubbles:true}));program.focus();
   });
   item.append(signatureEl,descriptionEl,button);grid.append(item);
