@@ -55,6 +55,18 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 .syn-keyword{color:#7137b8;font-weight:800}.syn-function{color:#0867a7;font-weight:750}.syn-number{color:#ba4b12;font-weight:700}.syn-boolean{color:#a12b7d;font-weight:750}.syn-comment{color:#53754c;font-style:italic}.syn-operator{color:#a33b24;font-weight:750}.syn-name{color:#135c71;font-weight:750}
 .editor-help{font-size:.82rem;color:#456078;margin:.45rem 0 0}
 
+
+/* Catalogue d'instructions : aide accessible et insertion sans solution automatique. */
+.catalogue{margin:1rem 0;border:1px solid #9bb9d2;border-radius:12px;background:#f1f7fc;padding:.8rem}
+.catalogue summary{font-weight:800;cursor:pointer;color:#173d67;padding:.35rem}
+.catalogue p{margin:.45rem 0;color:#35506c;font-size:.9rem}
+.catalogue-group{margin:.85rem 0}.catalogue-group h3{font-size:.98rem;margin:.5rem 0}
+.catalogue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.55rem}
+.catalogue-item{background:#fff;border:1px solid #c3d4e4;border-radius:9px;padding:.65rem;min-width:0}
+.catalogue-item code{display:block;overflow-wrap:anywhere;margin-bottom:.35rem;font-size:.87rem}
+.catalogue-item p{font-size:.82rem;margin:.25rem 0 .5rem}
+.catalogue-item button{font-size:.82rem;margin:0;padding:.4rem .6rem;background:#1e628e}
+.catalogue-item button:focus-visible{outline:3px solid #ed9d22}
 </style>
 </head>
 <body>
@@ -68,6 +80,12 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <section><h2>Votre programme</h2>
 <p><a href="./python-reel.html" style="display:inline-block;background:#e5f4ff;color:#124e83;border:2px solid #68a9cf;border-radius:9px;padding:.65rem .9rem;font-weight:750;text-decoration:none">Atelier Python réel : variables, listes, fonctions et tests ↗</a></p>
 <p>Écris des instructions de déplacement, puis découvre les conditions <code>if</code>, les boucles bornées <code>for</code>, les boucles non bornées <code>while</code> et les variables de type entier.</p>
+<details class="catalogue" id="catalogue-actions" open>
+<summary>Catalogue des instructions Python d'Albert — consulter et insérer</summary>
+<p>Choisis une instruction pour comprendre son effet, puis insère un exemple dans ton programme. Les exemples sont à adapter à la mission.</p>
+<div id="catalogue-content"></div>
+<p><strong>Attention :</strong> ce laboratoire utilise un interpréteur pédagogique limité. Les fonctions Python générales comme <code>print()</code>, <code>input()</code> et <code>def</code> s'étudient dans l'<a href="./python-reel.html">atelier Python réel</a>.</p>
+</details>
 <label for="program">Instructions de déplacement</label>
 <div class="editor-shell"><pre id="syntax-highlight" aria-hidden="true"></pre><textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-help"></textarea></div><p class="editor-help" id="editor-help">Mots-clés violets · commandes bleues · nombres orange · commentaires verts. Tabulation : quatre espaces.</p>
 <div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
@@ -116,6 +134,48 @@ program.addEventListener('keydown',event=>{
   program.setRangeText('    ',start,end,'end');
   program.dispatchEvent(new Event('input',{bubbles:true}));
 });
+
+
+const CATALOGUE=[
+ {titre:'Déplacements d’Albert',items:[
+  ['albert.avancer()','Avance d’une case dans la direction regardée.','albert.avancer()'],
+  ['albert.tourner_gauche()','Pivote de 90° à gauche sans changer de case.','albert.tourner_gauche()'],
+  ['albert.tourner_droite()','Pivote de 90° à droite sans changer de case.','albert.tourner_droite()']]},
+ {titre:'Variables et répétitions',items:[
+  ['pas = 2','Affecte l’entier 2 à la variable pas.','pas = 2'],
+  ['for i in range(3):','Boucle bornée : exécute trois fois le bloc indenté.','for i in range(3):\\n    albert.avancer()'],
+  ['while pas < 3:','Boucle non bornée : répète tant que la condition est vraie. Prévois son arrêt.','pas = 0\\nwhile pas < 3:\\n    albert.avancer()\\n    pas += 1'],
+  ['pas += 1','Augmente la variable entière pas de 1.','pas += 1'],
+  ['pas -= 1','Diminue la variable entière pas de 1.','pas -= 1']]},
+ {titre:'Décisions et conditions',items:[
+  ['if ...:','Exécute un bloc seulement si la condition est vraie.','energie = 3\\nif energie > 0:\\n    albert.avancer()'],
+  ['if ... else:','Choisit entre deux blocs.','acces = True\\nif acces:\\n    albert.avancer()\\nelse:\\n    albert.tourner_droite()'],
+  ['if ... elif ... else:','Teste plusieurs cas dans l’ordre.','choix = 2\\nif choix == 1:\\n    albert.tourner_gauche()\\nelif choix == 2:\\n    albert.avancer()\\nelse:\\n    albert.tourner_droite()'],
+  ['and / or','Combine deux conditions booléennes.','energie = 3\\nacces = True\\nif energie > 0 and acces:\\n    albert.avancer()'],
+  ['==, !=, <, >, <=, >=','Compare des valeurs. = affecte ; == compare.','energie = 3\\nif energie >= 2:\\n    albert.avancer()']]}
+];
+const catalogueRoot=document.querySelector('#catalogue-content');
+for(const group of CATALOGUE){
+ const section=document.createElement('section');section.className='catalogue-group';
+ const heading=document.createElement('h3');heading.textContent=group.titre;section.append(heading);
+ const grid=document.createElement('div');grid.className='catalogue-grid';
+ for(const [signature,description,snippet] of group.items){
+  const item=document.createElement('div');item.className='catalogue-item';
+  const signatureEl=document.createElement('code');signatureEl.textContent=signature;
+  const descriptionEl=document.createElement('p');descriptionEl.textContent=description;
+  const button=document.createElement('button');button.type='button';button.textContent='Insérer';button.setAttribute('aria-label','Insérer '+signature);
+  button.addEventListener('click',()=>{
+   const start=program.selectionStart,end=program.selectionEnd;
+   const before=program.value.slice(0,start),after=program.value.slice(end);
+   const prefix=before.length&&!before.endsWith('\\n')?'\\n':'';
+   const suffix=after.length&&!after.startsWith('\\n')?'\\n':'';
+   program.setRangeText(prefix+snippet+suffix,start,end,'end');
+   program.dispatchEvent(new Event('input',{bubbles:true}));program.focus();
+  });
+  item.append(signatureEl,descriptionEl,button);grid.append(item);
+ }
+ section.append(grid);catalogueRoot.append(section);
+}
 
 let indexMission=0;
 let mission;
