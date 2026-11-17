@@ -45,13 +45,13 @@ export function interpreterProgramme(source,limite=40){
       const line=lines[i].trim();
       const assign=/^([a-zA-Z_]\w*)\s*=\s*(\d+|True|False)$/.exec(line);
       if(assign){vars.set(assign[1],value(assign[2],i));hasVariable=true;i++;continue;}
-      const increment=/^([a-zA-Z_]\\w*)\\s*(\\+=|-=)\\s*(\\d+)$/.exec(line);
+      const increment=/^([a-zA-Z_]\w*)\s*(\+=|-=)\s*(\d+)$/.exec(line);
       if(increment){
         if(!vars.has(increment[1])||!Number.isInteger(vars.get(increment[1])))err(i,'Variable entière attendue');
         vars.set(increment[1],vars.get(increment[1])+(increment[2]==='+='?1:-1)*Number(increment[3]));
         hasVariable=true;i++;continue;
       }
-      const whileMatch=/^while\\s+(.+):$/.exec(line);
+      const whileMatch=/^while\s+(.+):$/.exec(line);
       if(whileMatch){
         hasWhile=true;const child=nextBlock(i,end,indent);
         let repetitions=0;
