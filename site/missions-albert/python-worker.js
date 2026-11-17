@@ -38,13 +38,13 @@ self.onmessage=async event=>{
         const source=await response.text();
         const evalOutput=[];
         py.setStdout({batched:line=>evalOutput.push(line)});
-        await py.runPythonAsync('__albert_lesson = '+Number(lesson)+'\\n'+source);
+        await py.runPythonAsync('__albert_lesson = '+Number(lesson)+'\n'+source);
         const marker=evalOutput.find(line=>line.startsWith('__ALBERT_EVAL__'));
         if(!marker)throw new Error('Résultat des tests absent.');
         evaluation=JSON.parse(marker.slice('__ALBERT_EVAL__'.length));
       }catch(error){evaluation={supported:false,message:'Évaluation indisponible : '+String(error?.message||error)};}
     }
-    self.postMessage({id,output:output.join('\\n'),result:result===undefined||result===null?'':String(result),evaluation});
+    self.postMessage({id,output:output.join('\n'),result:result===undefined||result===null?'':String(result),evaluation});
     if(result&&typeof result.destroy==='function')result.destroy();
   }catch(error){
     self.postMessage({id,error:String(error&&error.message||error)});
