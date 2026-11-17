@@ -24,7 +24,7 @@ self.onmessage=async ({data})=>{
   return;
  }
  if(data?.type!=='run')return;
- const {id,code,limit}=data;
+ const {id,code,limit,requirements={}}=data;
  if(typeof code!=='string'||code.length>10000||!Number.isInteger(limit)||limit<1||limit>100){
   self.postMessage({id,error:'Programme ou limite invalide.'});return;
  }
@@ -35,6 +35,26 @@ self.onmessage=async ({data})=>{
   py.setStderr({batched:s=>output.push(s)});
   scope=py.runPython('dict(__name__="__main__")');
   scope.set('_albert_limit',limit);
+  scope.set('_student_code',code);
+  scope.set('_requirements',requirements);
+  // Analyse de l'arbre syntaxique Python : les commentaires et chaînes ne valident pas une notion.
+  const analysis=`import ast
+_tree = ast.parse(_student_code)
+_nodes = list(ast.walk(_tree))
+_requirements = _requirements.to_py() if hasattr(_requirements, "to_py") else _requirements
+if _requirements.get("loop") and not any(isinstance(n, ast.For) for n in _nodes):
+    raise ValueError("Cette mission demande une boucle bornée for.")
+if _requirements.get("while") and not any(isinstance(n, ast.While) for n in _nodes):
+    raise ValueError("Cette mission demande une boucle non bornée while.")
+if _requirements.get("condition") and not any(isinstance(n, ast.If) for n in _nodes):
+    raise ValueError("Cette mission demande une structure conditionnelle if.")
+if _requirements.get("variable") and not any(
+    isinstance(n, (ast.Assign, ast.AnnAssign)) and isinstance(n.value, ast.Constant)
+    and type(n.value.value) is int for n in _nodes
+):
+    raise ValueError("Cette mission demande une affectation d'une valeur entière à une variable.")
+`;
+  py.runPython(analysis,{globals:scope});
   const prelude=`_albert_commands = []
 class _Albert:
     def _action(self, name):
