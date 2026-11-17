@@ -1,0 +1,196 @@
+{
+  "version": "2026-11-17",
+  "status": "référentiel de conception, pas programme officiel exhaustif",
+  "sources": [
+    "https://eduscol.education.gouv.fr/5841/programmes-et-ressources-en-sciences-numeriques-et-technologie-voie-gt",
+    "https://eduscol.education.gouv.fr/5823/programmes-et-ressources-en-numerique-et-sciences-informatiques-voie-g"
+  ],
+  "levels": [
+    {
+      "id": "SNT-A",
+      "name": "Séquences et débogage",
+      "skills": [
+        "séquence",
+        "instructions",
+        "trace",
+        "débogage"
+      ],
+      "prerequisites": [],
+      "environment": "grille",
+      "validation": [
+        "prédiction",
+        "exécution",
+        "transfert"
+      ]
+    },
+    {
+      "id": "SNT-B",
+      "name": "Variables et types",
+      "skills": [
+        "affectation",
+        "entier",
+        "flottant",
+        "booléen",
+        "chaîne"
+      ],
+      "prerequisites": [
+        "SNT-A"
+      ],
+      "environment": "pyodide",
+      "validation": [
+        "prédiction",
+        "tests multi-entrées",
+        "transfert"
+      ]
+    },
+    {
+      "id": "SNT-C",
+      "name": "Conditions",
+      "skills": [
+        "comparaison",
+        "if",
+        "elif",
+        "else",
+        "and",
+        "or",
+        "not"
+      ],
+      "prerequisites": [
+        "SNT-B"
+      ],
+      "environment": "mixte",
+      "validation": [
+        "branches vraie et fausse",
+        "cas limite",
+        "transfert"
+      ]
+    },
+    {
+      "id": "SNT-D",
+      "name": "Boucles",
+      "skills": [
+        "for",
+        "range",
+        "while",
+        "condition d'arrêt",
+        "compteur",
+        "accumulateur"
+      ],
+      "prerequisites": [
+        "SNT-C"
+      ],
+      "environment": "mixte",
+      "validation": [
+        "nombre d'itérations",
+        "terminaison",
+        "transfert"
+      ]
+    },
+    {
+      "id": "SNT-E",
+      "name": "Fonctions",
+      "skills": [
+        "def",
+        "paramètres",
+        "return",
+        "appels",
+        "décomposition"
+      ],
+      "prerequisites": [
+        "SNT-D"
+      ],
+      "environment": "pyodide",
+      "validation": [
+        "tests multi-entrées",
+        "cas limite",
+        "transfert"
+      ]
+    },
+    {
+      "id": "PASS-F",
+      "name": "Données et listes",
+      "skills": [
+        "index",
+        "tranche",
+        "liste",
+        "parcours",
+        "appartenance",
+        "recherche"
+      ],
+      "prerequisites": [
+        "SNT-E"
+      ],
+      "environment": "pyodide",
+      "validation": [
+        "tests multi-entrées",
+        "cas limite",
+        "transfert"
+      ]
+    },
+    {
+      "id": "PASS-G",
+      "name": "Algorithmique",
+      "skills": [
+        "recherche séquentielle",
+        "maximum",
+        "comptage",
+        "assert",
+        "spécification"
+      ],
+      "prerequisites": [
+        "PASS-F"
+      ],
+      "environment": "pyodide",
+      "validation": [
+        "tests multi-entrées",
+        "cas limite",
+        "transfert"
+      ]
+    },
+    {
+      "id": "SNT-H",
+      "name": "Projets thématiques",
+      "skills": [
+        "Internet",
+        "Web",
+        "réseaux sociaux",
+        "données structurées",
+        "localisation et cartographie",
+        "informatique embarquée",
+        "photographie numérique"
+      ],
+      "prerequisites": [
+        "SNT-C"
+      ],
+      "environment": "projet",
+      "validation": [
+        "projet",
+        "explication",
+        "transfert"
+      ]
+    },
+    {
+      "id": "NSI-I",
+      "name": "Passerelle Première NSI",
+      "skills": [
+        "représentation des données",
+        "tableaux",
+        "dictionnaires",
+        "tuples",
+        "algorithmes",
+        "architecture matérielle",
+        "réseaux",
+        "Web"
+      ],
+      "prerequisites": [
+        "PASS-G"
+      ],
+      "environment": "mixte",
+      "validation": [
+        "tests",
+        "raisonnement",
+        "transfert"
+      ]
+    }
+  ]
+}
