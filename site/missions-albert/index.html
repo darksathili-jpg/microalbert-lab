@@ -89,7 +89,7 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 </details>
 <label for="program">Instructions de déplacement</label>
 <div class="editor-shell"><pre id="syntax-highlight" aria-hidden="true"></pre><textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-help"></textarea></div><p class="editor-help" id="editor-help">Mots-clés violets · commandes bleues · nombres orange · commentaires verts. Tabulation : quatre espaces.</p>
-<label for="execution-mode">Moteur d’exécution</label><select id="execution-mode" style="display:block;width:100%;padding:.55rem;margin:.4rem 0"><option value="guided">Guidé — interpréteur pédagogique</option><option value="python">Python réel — expérimental (Pyodide)</option></select><p id="python-mode-help" class="editor-help">Mode guidé : contrôles des notions demandées par chaque mission.</p><pre id="python-console" aria-live="polite" hidden style="white-space:pre-wrap;background:#edf4fb;padding:.7rem;border-radius:8px"></pre><div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
+<label for="execution-mode">Moteur d’exécution</label><select id="execution-mode" style="display:block;width:100%;padding:.55rem;margin:.4rem 0"><option value="python">Python réel — Pyodide (par défaut)</option><option value="guided">Guidé — interpréteur pédagogique (secours)</option></select><p id="python-mode-help" class="editor-help">Python réel par défaut. En cas d’indisponibilité du moteur, le mode guidé prend le relais automatiquement.</p><pre id="python-console" aria-live="polite" hidden style="white-space:pre-wrap;background:#edf4fb;padding:.7rem;border-radius:8px"></pre><div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
 <p class="notice"><strong>Deux modes :</strong> le mode guidé conserve les contrôles pédagogiques des 20 missions. Le mode Python réel, expérimental, permet aussi <code>print()</code> et <code>def</code> ; il nécessite le téléchargement de Pyodide et ne remplace pas les validations pédagogiques du mode guidé. Les déplacements restent contrôlés par le moteur du laboratoire. <code>input()</code> interactif n’est pas encore pris en charge.</p>
 <p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
 </div></main>
@@ -365,6 +365,7 @@ const executionMode=document.querySelector('#execution-mode');
 const pythonModeHelp=document.querySelector('#python-mode-help');
 const pythonConsole=document.querySelector('#python-console');
 let pythonWorker=null,pythonReady=false;
+const unavailable=message=>Object.assign(new Error(message),{engineUnavailable:true});
 executionMode.addEventListener('change',()=>{
  pythonModeHelp.textContent=executionMode.value==='python'
  ?'Python réel : fonctions et affichages disponibles. Premier chargement potentiellement long. Les exigences de structure des missions ne sont pas encore vérifiées dans ce mode.'
@@ -376,16 +377,16 @@ function executePython(code,limit,token){
  return new Promise((resolve,reject)=>{
   if(token!==generation){reject(Error('Exécution annulée.'));return;}
   let worker=pythonWorker;
-  if(!worker){worker=new Worker('./python-missions-worker.js?v=1');pythonWorker=worker;}
+  if(!worker){try{worker=new Worker('./python-missions-worker.js?v=2');pythonWorker=worker;}catch(error){reject(unavailable('Impossible de créer le moteur Python.'));return;}}
   let timer;
   const cleanup=()=>{clearTimeout(timer);worker.onmessage=null;worker.onerror=null;};
   const fail=error=>{cleanup();stopPython();reject(error);};
-  worker.onerror=()=>fail(Error('Impossible de charger le moteur Python.'));
+  worker.onerror=()=>fail(unavailable('Impossible de charger le moteur Python.'));
   worker.onmessage=event=>{
    const data=event.data||{};
    if(token!==generation){fail(Error('Exécution annulée.'));return;}
    if(data.type==='loading'){feedback.textContent=data.message;return;}
-   if(data.type==='init-error'){fail(Error(data.error));return;}
+   if(data.type==='init-error'){fail(unavailable(data.error||'Initialisation de Python impossible.'));return;}
    if(data.type==='ready'){
     pythonReady=true;clearTimeout(timer);
     timer=setTimeout(()=>fail(Error('Exécution Python interrompue après 8 secondes.')),8000);
@@ -397,7 +398,7 @@ function executePython(code,limit,token){
    resolve(data);
   };
   if(!pythonReady){
-   timer=setTimeout(()=>fail(Error('Chargement de Python trop long (60 secondes).')),60000);
+   timer=setTimeout(()=>fail(unavailable('Chargement de Python trop long (60 secondes).')),60000);
    worker.postMessage({type:'init'});
   }else{
    timer=setTimeout(()=>fail(Error('Exécution Python interrompue après 8 secondes.')),8000);
@@ -408,13 +409,25 @@ function executePython(code,limit,token){
 async function play(){
   const token=++generation;run.disabled=true;feedback.textContent='Exécution en cours…';
   try{
-    const realPython=executionMode.value==='python';
+    let realPython=executionMode.value==='python';
     let parsed;
     if(realPython){
-      const result=await executePython(program.value,mission.limiteInstructions,token);
-      pythonConsole.hidden=false;
-      pythonConsole.textContent=result.output||'(Aucun affichage Python)';
-      parsed={commands:result.commands};
+      try{
+        const result=await executePython(program.value,mission.limiteInstructions,token);
+        pythonConsole.hidden=false;
+        pythonConsole.textContent=result.output||'(Aucun affichage Python)';
+        parsed={commands:result.commands};
+      }catch(error){
+        if(!error.engineUnavailable)throw error;
+        if(token!==generation)return;
+        executionMode.value='guided';
+        realPython=false;
+        pythonModeHelp.textContent='Mode de secours activé : Python réel indisponible. Certaines instructions Python générales ne sont pas prises en charge.';
+        pythonConsole.hidden=false;
+        pythonConsole.textContent='Pyodide indisponible : '+error.message+'\\nReprise avec l’interpréteur pédagogique.';
+        feedback.textContent='Python réel indisponible : utilisation du mode guidé.';
+        parsed=interpreterProgramme(program.value,mission.limiteInstructions);
+      }
     }else parsed=interpreterProgramme(program.value,mission.limiteInstructions);
     const item=MISSIONS_SNT[indexMission];
     if(!realPython&&item.exigeBoucle&&!parsed.hasLoop)throw Error('Cette mission demande une boucle bornée for.');
