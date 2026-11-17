@@ -32,8 +32,8 @@ select{width:100%;padding:.65rem;border:1px solid #7b9cb6;border-radius:8px}
 <div class="layout"><section><label for="lesson">Choisir une activité</label><select id="lesson"></select>
 <h2 id="lesson-title"></h2><p id="goal"></p><p id="hint"></p>
 <label for="code">Programme Python</label><div class="code-editor"><pre id="code-colors" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="code-legend"></textarea></div><p id="code-legend" class="code-legend">Mots-clés violets · fonctions bleues · chaînes vertes · nombres orange · commentaires vert olive. Tabulation : 4 espaces.</p>
-<div><button id="run">Exécuter le Python</button><button id="stop" class="secondary">Arrêter</button><button id="reset" class="secondary">Recommencer</button></div>
-</section><section><h2>Console Python</h2><p id="runtime-version" style="font-size:.8rem;color:#4b6378">Version de diagnostic : PY-20261117-R3</p><p id="status" role="status" aria-live="polite">Prêt à démarrer.</p><pre id="output" aria-live="polite">La sortie du programme apparaîtra ici.</pre>
+<div><button id="run">Exécuter le Python</button><button id="verify" class="secondary">Vérifier ma solution</button><button id="stop" class="secondary">Arrêter</button><button id="reset" class="secondary">Recommencer</button></div>
+</section><section><h2>Console Python</h2><div id="evaluation" role="status" aria-live="polite" style="border-left:4px solid #2a6d98;padding:.7rem;margin:.6rem 0;background:#eff7fc">Les tests de compétence sont disponibles pour les activités 09, 10, 16, 17 et 18.</div><p id="runtime-version" style="font-size:.8rem;color:#4b6378">Version de diagnostic : PY-20261117-R3</p><p id="status" role="status" aria-live="polite">Prêt à démarrer.</p><pre id="output" aria-live="polite">La sortie du programme apparaîtra ici.</pre>
 <p class="note">Python est exécuté par Pyodide dans un processus Web Worker distinct, avec une limite de 8 secondes pour l'exécution, après son initialisation. Le premier lancement télécharge le moteur Python : une connexion Internet est nécessaire. Aucun compte ni clé API n'est requis.</p>
 <p>Pour chaque activité : prédis d'abord la sortie, exécute ton programme, puis explique ce que tu observes. Un programme sans erreur n'est pas nécessairement un programme correct.</p></section></div>
 </main><script type="module">
@@ -58,7 +58,7 @@ const lessons=[
 {"title":"18 — Mini-projet : laboratoire","goal":"Combine fonction, liste, boucle bornée et structure conditionnelle pour analyser des mesures.","hint":"Comment compter les mesures supérieures ou égales à un seuil ?","code":"def compter_alertes(mesures, seuil):\n    compteur = 0\n    for mesure in mesures:\n        if mesure >= seuil:\n            compteur += 1\n    return compteur\n\nreleves = [12, 18, 9, 21, 15]\nprint(compter_alertes(releves, 16))\n# Ajoute des assertions pour vérifier le résultat."}
 ];
 const select=document.querySelector('#lesson'),code=document.querySelector('#code'),run=document.querySelector('#run'),stop=document.querySelector('#stop'),reset=document.querySelector('#reset'),status=document.querySelector('#status'),output=document.querySelector('#output');
-let worker=null,sequence=0,timeout=null,ready=false,loading=false;
+let worker=null,sequence=0,timeout=null,ready=false,loading=false,requestedVerify=false;
 const colors=document.querySelector('#code-colors');
 const htmlEscape=value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function colorize(source){
@@ -101,6 +101,7 @@ function load(n){
  code.value=localStorage.getItem('microalbert-python-code-'+n)??item.code;refreshColors();
  output.textContent='La sortie du programme apparaîtra ici.';
  status.textContent='Prêt à démarrer.';
+ document.querySelector('#evaluation').textContent='Exécute ton programme, puis vérifie ta solution lorsque des tests sont disponibles.';
 }
 select.replaceChildren(...lessons.map((item,i)=>{
  const o=document.createElement('option');o.value=String(i);o.textContent=item.title;return o;
@@ -113,7 +114,7 @@ stop.addEventListener('click',()=>{
 function execute(id){
  if(!worker||!ready||id!==sequence)return;
  status.textContent='Exécution du programme Python…';
- worker.postMessage({id,code:code.value});
+ worker.postMessage({id,code:code.value,lesson:Number(select.value),verify:requestedVerify});
  clearTimeout(timeout);
  timeout=setTimeout(()=>{
   if(id!==sequence)return;
@@ -122,7 +123,11 @@ function execute(id){
   output.textContent='Le programme prend trop de temps. Vérifie notamment les boucles et leurs conditions d’arrêt.';
  },8000);
 }
-run.addEventListener('click',()=>{
+const verifyButton=document.querySelector('#verify');
+verifyButton.addEventListener('click',()=>start(true));
+run.addEventListener('click',()=>start(false));
+function start(verify){
+ requestedVerify=verify;
  if(loading)return;
  const id=++sequence;
  run.disabled=true;output.textContent='';
@@ -130,7 +135,7 @@ run.addEventListener('click',()=>{
  if(worker){shutdown();}
  status.textContent='Initialisation de Python : téléchargement du moteur au premier lancement…';
  loading=true;ready=false;run.disabled=true;
- try{worker=new Worker('./python-worker.js?v=PY-20261117-R3');}
+ try{worker=new Worker('./python-worker.js?v=PY-20261117-EVAL1');}
  catch(error){shutdown();status.textContent='Impossible de créer le moteur Python.';output.textContent=String(error);return;}
  worker.onmessage=event=>{
   const data=event.data||{};
@@ -145,9 +150,22 @@ run.addEventListener('click',()=>{
   }
   if(data.id!==sequence)return;
   clearTimeout(timeout);timeout=null;
-  const {error,output:stdout,result}=data;
+  const {error,output:stdout,result,evaluation}=data;
   output.textContent=error?'Erreur Python :\\n'+error:(stdout||result||'(Aucune sortie : utilise print pour afficher une valeur.)');
   status.textContent=error?'Le programme a signalé une erreur.':'Exécution terminée.';
+  const panel=document.querySelector('#evaluation');
+  if(error)panel.textContent='Aucune compétence validée : corrige d’abord l’erreur Python.';
+  else if(requestedVerify&&evaluation){
+    if(!evaluation.supported)panel.textContent=evaluation.message;
+    else {
+      panel.textContent='Tests : '+evaluation.passed+' / '+evaluation.total+' réussis. '+(evaluation.error||evaluation.checks.map(t=>(t.ok?'✓ ':'✗ ')+t.label).join(' · '));
+      if(evaluation.passed===evaluation.total){
+        const passed=new Set(JSON.parse(localStorage.getItem('microalbert-python-tests-v1')||'[]'));
+        passed.add(Number(select.value));localStorage.setItem('microalbert-python-tests-v1',JSON.stringify([...passed]));
+        panel.textContent+=' Programme vérifié sur plusieurs cas (maîtrise à confirmer par transfert).';
+      }
+    }
+  }else panel.textContent='Programme exécuté : cela ne prouve pas encore qu’il est correct. Utilise « Vérifier ma solution ».';
   run.disabled=false;
  };
  worker.onerror=()=>{
@@ -161,7 +179,7 @@ run.addEventListener('click',()=>{
   status.textContent='Chargement de Python trop long (60 secondes).';
   output.textContent='Le moteur Python n’a pas pu être initialisé. Vérifie la connexion aux serveurs de Pyodide, puis réessaie. Ce délai concerne le chargement, pas ton programme.';
  },60000);
-});
+}
 code.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();code.setRangeText('    ',code.selectionStart,code.selectionEnd,'end');code.dispatchEvent(new Event('input',{bubbles:true}));}});
 load(0);
 </script></body></html>
