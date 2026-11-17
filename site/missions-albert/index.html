@@ -28,6 +28,33 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 #feedback{min-height:2.5rem;font-weight:600}code{background:#eaf2fa;padding:.15rem .35rem;border-radius:4px}
 @media(max-width:700px){.layout{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Décor de laboratoire : carrelage technique, joints, circuits et modules de sécurité. */
+.board{gap:5px;padding:6px;border:3px solid #53748c;border-radius:14px;background:#253e56;box-shadow:inset 0 0 0 2px #8bc9df,0 8px 22px #183b5a22}
+.cell{overflow:hidden;border:2px solid #9bb5c8;border-radius:7px;background:
+  radial-gradient(circle at 15% 18%,#8de4f0 0 2px,transparent 3px),
+  radial-gradient(circle at 85% 82%,#8de4f0 0 2px,transparent 3px),
+  linear-gradient(90deg,transparent 48%,#b6d7e455 49%,#b6d7e455 51%,transparent 52%),
+  linear-gradient(0deg,transparent 48%,#b6d7e455 49%,#b6d7e455 51%,transparent 52%),
+  linear-gradient(145deg,#e9f4f8,#c8dfeb);
+  box-shadow:inset 0 2px 0 #ffffffb8,inset 0 -5px 12px #638da92a}
+.cell:not(.wall):not(.target)::after{content:"";position:absolute;inset:13%;border:1px dashed #70a9bc45;border-radius:8px;pointer-events:none}
+.wall{background:repeating-linear-gradient(135deg,#f6c545 0 9px,#253b52 9px 18px);border-color:#132b41;box-shadow:inset 0 0 0 3px #ecb941}
+.wall::before{content:"";position:absolute;inset:12%;border-radius:9px;background:linear-gradient(145deg,#8199ac,#314e67 60%,#20354c);border:3px solid #9ac3d1;box-shadow:0 5px 0 #182d42,inset 0 0 0 2px #1e384b}
+.wall::after{content:"⚠";position:absolute;z-index:1;font-size:clamp(1rem,2.6vw,2rem);color:#ffe27d;text-shadow:0 2px 2px #14283e}
+.target{background:radial-gradient(circle,#c7f7fa,#9bd6e0);border-color:#158b9c}
+.target::before{z-index:1}
+.sprite-layer{overflow:visible}
+.editor-shell{position:relative;border:2px solid #627fa7;border-radius:9px;background:#f8fbff;overflow:hidden;min-height:190px}
+.editor-shell:focus-within{outline:3px solid #f0ae36;outline-offset:2px}
+#program,#syntax-highlight{margin:0;padding:14px 16px;width:100%;min-height:190px;max-height:420px;font:15px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:0;tab-size:4;white-space:pre;overflow:auto;overflow-wrap:normal;word-break:normal}
+#syntax-highlight{position:absolute;inset:0;pointer-events:none;border:0;color:#243d58;background:transparent;z-index:1}
+#program{position:relative;display:block;z-index:2;resize:vertical;border:0;border-radius:0;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#152d4a}
+#program::selection{background:#85b9ee88;-webkit-text-fill-color:transparent}
+#program:focus{outline:none}
+.syn-keyword{color:#7137b8;font-weight:800}.syn-function{color:#0867a7;font-weight:750}.syn-number{color:#ba4b12;font-weight:700}.syn-boolean{color:#a12b7d;font-weight:750}.syn-comment{color:#53754c;font-style:italic}.syn-operator{color:#a33b24;font-weight:750}.syn-name{color:#135c71;font-weight:750}
+.editor-help{font-size:.82rem;color:#456078;margin:.45rem 0 0}
+
 </style>
 </head>
 <body>
@@ -41,7 +68,7 @@ button:disabled{opacity:.55;cursor:wait}.notice{background:#fff5d9;padding:.8rem
 <section><h2>Votre programme</h2>
 <p>Écris des instructions de déplacement, puis découvre les conditions <code>if</code>, les boucles bornées <code>for</code>, les boucles non bornées <code>while</code> et les variables de type entier.</p>
 <label for="program">Instructions de déplacement</label>
-<textarea id="program" spellcheck="false"></textarea>
+<div class="editor-shell"><pre id="syntax-highlight" aria-hidden="true"></pre><textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-help"></textarea></div><p class="editor-help" id="editor-help">Mots-clés violets · commandes bleues · nombres orange · commentaires verts. Tabulation : quatre espaces.</p>
 <div><button id="run" type="button">Exécuter</button><button id="reset" type="button" class="secondary">Réinitialiser</button></div>
 <p class="notice"><strong>Limite du prototype :</strong> ce parcours interprète un sous-ensemble pédagogique de la syntaxe Python (instructions, conditions if / elif / else, boucles for et while, affectations et compteurs). Il n’exécute pas encore du Python général avec Pyodide.</p>
 <p class="subtitle">Aucune donnée personnelle, aucun appel à l'API Albert.</p></section>
@@ -54,6 +81,41 @@ const board=document.querySelector('#board'), feedback=document.querySelector('#
 const missionTitle=document.querySelector('#mission-title'),missionNotion=document.querySelector('#mission-notion'),missionGoal=document.querySelector('#mission-goal'),missionHelp=document.querySelector('#mission-help');
 const missionSelect=document.querySelector('#mission-select'),nextMission=document.querySelector('#next-mission'),progress=document.querySelector('#mission-progress');
 const run=document.querySelector('#run'), reset=document.querySelector('#reset'), program=document.querySelector('#program');
+const highlight=document.querySelector('#syntax-highlight');
+const escapeCode=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function highlightLine(line){
+  const commentAt=line.indexOf('#');
+  const body=commentAt<0?line:line.slice(0,commentAt);
+  const comment=commentAt<0?'':line.slice(commentAt);
+  const tokens=/\b(?:if|elif|else|for|while|in|range|and|or|not|True|False|albert|avancer|tourner_gauche|tourner_droite)\b|\b\d+\b|(?:==|!=|<=|>=|\+=|-=|=|<|>)/g;
+  let out='',last=0,match;
+  while((match=tokens.exec(body))){
+    out+=escapeCode(body.slice(last,match.index));
+    const token=match[0];
+    const type=/^(if|elif|else|for|while|in|and|or|not)$/.test(token)?'keyword':
+      /^(True|False)$/.test(token)?'boolean':
+      /^\d+$/.test(token)?'number':
+      /^(albert)$/.test(token)?'name':
+      /^(range|avancer|tourner_gauche|tourner_droite)$/.test(token)?'function':'operator';
+    out+='<span class="syn-'+type+'">'+escapeCode(token)+'</span>';
+    last=match.index+token.length;
+  }
+  return out+escapeCode(body.slice(last))+(comment?'<span class="syn-comment">'+escapeCode(comment)+'</span>':'');
+}
+function updateHighlight(){
+  highlight.innerHTML=program.value.split('\n').map(highlightLine).join('\n')+'\n';
+  highlight.scrollTop=program.scrollTop;highlight.scrollLeft=program.scrollLeft;
+}
+program.addEventListener('scroll',updateHighlight);
+program.addEventListener('input',updateHighlight);
+program.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  event.preventDefault();
+  const start=program.selectionStart,end=program.selectionEnd;
+  program.setRangeText('    ',start,end,'end');
+  program.dispatchEvent(new Event('input',{bubbles:true}));
+});
+
 let indexMission=0;
 let mission;
 const sauvegarde='microalbert-snt-parcours-v1';
@@ -201,6 +263,7 @@ function chargerMission(n){
   const done=JSON.parse(localStorage.getItem(sauvegarde)||'[]');
   progress.textContent='Progression : '+done.length+' / '+MISSIONS_SNT.length+' missions réussies';
   program.value=localStorage.getItem('microalbert-snt-code-'+n)??item.departCode;
+  updateHighlight();
   feedback.textContent='Albert attend votre programme.';
   nextMission.hidden=true;
   draw(mission.depart);
