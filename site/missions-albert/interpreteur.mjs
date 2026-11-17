@@ -2,7 +2,7 @@
 export function interpreterProgramme(source,limite=40){
   const lines=source.replace(/\r/g,'').split('\n');
   const vars=new Map(),commands=[];
-  let hasLoop=false,hasVariable=false,hasCondition=false;
+  let hasLoop=false,hasVariable=false,hasCondition=false,hasWhile=false;
   const err=(i,msg)=>{throw Error(msg+' (ligne '+(i+1)+').')};
   const value=(s,i)=>{
     s=s.trim();
@@ -45,6 +45,22 @@ export function interpreterProgramme(source,limite=40){
       const line=lines[i].trim();
       const assign=/^([a-zA-Z_]\w*)\s*=\s*(\d+|True|False)$/.exec(line);
       if(assign){vars.set(assign[1],value(assign[2],i));hasVariable=true;i++;continue;}
+      const increment=/^([a-zA-Z_]\\w*)\\s*(\\+=|-=)\\s*(\\d+)$/.exec(line);
+      if(increment){
+        if(!vars.has(increment[1])||!Number.isInteger(vars.get(increment[1])))err(i,'Variable entière attendue');
+        vars.set(increment[1],vars.get(increment[1])+(increment[2]==='+='?1:-1)*Number(increment[3]));
+        hasVariable=true;i++;continue;
+      }
+      const whileMatch=/^while\\s+(.+):$/.exec(line);
+      if(whileMatch){
+        hasWhile=true;const child=nextBlock(i,end,indent);
+        let repetitions=0;
+        while(condition(whileMatch[1],i)){
+          if(++repetitions>limite)err(i,'Boucle non bornée interrompue : limite de sécurité atteinte');
+          execute(child.start,child.end,child.indent,depth+1);
+        }
+        i=child.end;continue;
+      }
       const loop=/^for\s+([a-zA-Z_]\w*)\s+in\s+range\((\d+|[a-zA-Z_]\w*)\):$/.exec(line);
       if(loop){
         hasLoop=true;const count=value(loop[2],i);
@@ -79,5 +95,5 @@ export function interpreterProgramme(source,limite=40){
     }
   }
   execute(0,lines.length,0,0);
-  return {commands,hasLoop,hasVariable,hasCondition};
+  return {commands,hasLoop,hasVariable,hasCondition,hasWhile};
 }
