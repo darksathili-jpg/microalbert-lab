@@ -1,12 +1,19 @@
 /* Exécution Python isolée dans un Web Worker, jamais dans la page principale. */
 const VERSION='0.27.7';
-const CDN='https://cdn.jsdelivr.net/pyodide/v'+VERSION+'/full/';
+const CDNS=['https://cdn.jsdelivr.net/pyodide/v'+VERSION+'/full/','https://unpkg.com/pyodide@'+VERSION+'/'];
 let pyodidePromise;
 async function runtime(){
   if(!pyodidePromise)pyodidePromise=(async()=>{
-    importScripts(CDN+'pyodide.js');
-    return await loadPyodide({indexURL:CDN});
-  })();
+    let lastError;
+    for(const base of CDNS){
+      try{
+        self.postMessage({type:'loading',message:'Chargement du moteur Python depuis '+new URL(base).hostname+'…'});
+        importScripts(base+'pyodide.js');
+        return await loadPyodide({indexURL:base});
+      }catch(error){lastError=error;}
+    }
+    throw new Error('Impossible de charger Pyodide depuis les deux serveurs : '+String(lastError?.message||lastError));
+  })().catch(error=>{pyodidePromise=null;throw error;});
   return pyodidePromise;
 }
 self.onmessage=async event=>{
