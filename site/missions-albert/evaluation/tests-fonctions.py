@@ -19,6 +19,11 @@ def _albert_eval():
         ("Liste vide",lambda: longueur([])==0),
         ("Un élément",lambda: longueur([8])==1),
         ("Trois éléments",lambda: longueur([1,2,3])==3)]),
+      18: ("Transfert : compter_positifs", [
+        ("Valeurs mixtes",lambda: compter_positifs([2,-1,0,7])==2),
+        ("Aucun positif",lambda: compter_positifs([-3,0,-1])==0),
+        ("Liste vide",lambda: compter_positifs([])==0),
+        ("Tous positifs",lambda: compter_positifs([1,2,3,4])==4)]),
       17: ("Fonction compter_alertes", [
         ("Mesures variées",lambda: compter_alertes([12,18,9,21,15],16)==2),
         ("Liste vide",lambda: compter_alertes([],16)==0),
