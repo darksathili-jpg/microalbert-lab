@@ -40,6 +40,7 @@ jobs:
         run: |
           npm ci --prefix parcours-source/du-token-a-l-agent
           npm test --prefix parcours-source/du-token-a-l-agent
+          (cd parcours-source/du-token-a-l-agent && npx playwright install --with-deps chromium)
           npm run test:e2e --prefix parcours-source/du-token-a-l-agent
           test ! -e dist/du-token-a-l-agent
           cp -a parcours-source/du-token-a-l-agent/dist dist/du-token-a-l-agent
