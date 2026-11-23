@@ -18,6 +18,6 @@ Pour utiliser un Chromium déjà installé, définir CHROMIUM_PATH pour la comma
 
 ## GitHub Pages
 
-Déposer le projet à la racine du dépôt cible et choisir **GitHub Actions** comme source dans Settings → Pages. Le flux GitHub Pages se déclenche sur la branche par défaut, exécute les tests et déploie dist. Il peut aussi être déclenché manuellement depuis cette branche. Les chemins sont relatifs et la navigation utilise les fragments d’URL pour fonctionner sous le chemin d’un dépôt. Aucun secret de fournisseur LLM n’est requis.
+Le parcours est publié sous `/microalbert-lab/du-token-a-l-agent/` par le workflow `microalbert-pages.yml` de la branche `feature/g4-github-pages-preview`. Ce workflow référence un commit de `feature/du-token-a-l-agent`, vérifie les deux applications et ajoute le build de ce parcours dans un sous-répertoire de l’artefact Pages. Pour publier une nouvelle version, mettre à jour la révision du parcours dans le workflow. Les chemins relatifs et les fragments d’URL permettent une navigation directe entre laboratoires. Aucun secret de fournisseur LLM n’est requis.
 
 La progression (version 1, séances validées, dernière séance) reste dans le stockage local du navigateur. Le tableau de bord permet de la sauvegarder et de la restaurer en JSON. Le code Python et les essais restent en mémoire dans l’atelier.
