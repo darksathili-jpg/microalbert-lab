@@ -11,6 +11,9 @@ concurrency:
   group: microalbert-pages
   cancel-in-progress: false
 
+env:
+  PARCOURS_REVISION: 08badeb63082ade2f8447ac51d96be0e5115248b
+
 jobs:
   verifier:
     runs-on: ubuntu-24.04
@@ -27,6 +30,20 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
       - run: printf '%s\n' "$GITHUB_SHA" > dist/revision.txt
+      - name: Récupérer la version du parcours
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PARCOURS_REVISION }}
+          path: parcours-source
+          persist-credentials: false
+      - name: Vérifier et assembler le parcours
+        run: |
+          npm ci --prefix parcours-source/du-token-a-l-agent
+          npm test --prefix parcours-source/du-token-a-l-agent
+          npm run test:e2e --prefix parcours-source/du-token-a-l-agent
+          test ! -e dist/du-token-a-l-agent
+          cp -a parcours-source/du-token-a-l-agent/dist dist/du-token-a-l-agent
+          printf '%s\n' "$PARCOURS_REVISION" > dist/du-token-a-l-agent/revision.txt
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -50,7 +67,10 @@ jobs:
         run: |
           for tentative in {1..12}; do
             revision="$(curl -fsS --max-time 10 "${PAGE_URL%/}/revision.txt?ref=$GITHUB_SHA" || true)"
-            if [[ "$revision" == "$GITHUB_SHA" ]]; then exit 0; fi
+            parcours="$(curl -fsS --max-time 10 "${PAGE_URL%/}/du-token-a-l-agent/revision.txt?ref=$PARCOURS_REVISION" || true)"
+            if [[ "$revision" == "$GITHUB_SHA" && "$parcours" == "$PARCOURS_REVISION" ]]; then
+              exit 0
+            fi
             sleep 5
           done
           exit 1
