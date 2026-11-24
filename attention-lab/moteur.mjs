@@ -40,13 +40,14 @@ export function propager(W, phrase, cible, ablation = false) {
   const contexte = normaliser(scores);
   const attention = contexte.p;
   const produits = V.map((v, i) => v.map(value => value * attention[i]));
-  const z = [0, 1].map(j => ablation ? 0 : produits.reduce((sum, row) => sum + row[j], 0));
+  const sommeValeurs = [0, 1].map(j => produits.reduce((sum, row) => sum + row[j], 0));
+  const z = ablation ? [0, 0] : sommeValeurs;
   const h = X.at(-1).map((value, j) => value + z[j]);
   const logits = [h[1], -h[1]];
   const sortie = normaliser(logits);
   const p = sortie.p;
   const loss = cible === undefined ? undefined : (sortie.max - logits[cible]) + Math.log(sortie.somme);
-  return { tokens, X, Q, K, V, q, scores, contexte, attention, produits, z, h, logits, sortie, p, loss };
+  return { tokens, X, Q, K, V, q, scores, contexte, attention, produits, sommeValeurs, z, h, logits, sortie, p, loss };
 }
 
 export function mesurer(W) {

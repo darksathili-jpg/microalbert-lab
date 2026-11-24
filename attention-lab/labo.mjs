@@ -24,10 +24,10 @@ const chips = tokens => tokens.map(x => '<span class="chip">' + escape(x) + '</s
 const debut = () => initialiser();
 
 let theme = charger('theme', 'nuit');
-let reponses = charger('reponses', {});
+const ancienLivret = Object.fromEntries(Object.entries(charger('reponses', {})).filter(([id]) => /^livret\d+$/.test(id)));
+let reponses = charger('reponses-v2', ancienLivret);
 let mode = 'guide';
 let numero = 0;
-let maxNumero = 0;
 let origine = 'reference';
 let graine = 12;
 let W = debut();
@@ -64,8 +64,18 @@ function analyser() {
   const [phrase, cible] = entree();
   return propager(poids(), phrase, cible, $('ablation').checked);
 }
-function visible(step) { return mode !== 'guide' || maxNumero >= step || $('prof').checked; }
+function visible(step) { return mode !== 'guide' || etapes.slice(0, step+1).every((_, i) => Object.hasOwn(reponses, 'etape'+i)) || $('prof').checked; }
+function accessible(step) { return step === 0 || visible(step-1); }
+function poser(pose) { $('mascotte').dataset.pose = pose; }
+const invitations = [
+  'Repère les unités que le modèle reçoit.', 'Retrouve la représentation du dernier mot.',
+  'Observe les coefficients conservés d’une phrase à l’autre.', 'Suis une ligne et une colonne.',
+  'Repère les vecteurs qui interviennent dans la comparaison.', 'Observe comment les scores deviennent des poids.',
+  'Suis le trajet des valeurs.', 'Compare les deux chemins qui se rejoignent.',
+  'Repère les scores qui servent à choisir un mot.', 'Compare les probabilités avant de conclure.'
+];
 function argmax(p) { return p[0] >= p[1] ? 0 : 1; }
+function prediction(p) { return p[0] === p[1] ? 'Égalité' : vocabulaire[argmax(p)]; }
 function reglageTheme() {
   $('theme').value = theme;
   document.documentElement.dataset.theme = theme;
@@ -79,18 +89,18 @@ function matrices() {
 
 function petiteVue(d, refaireMatrices) {
   const tokens = d.tokens.map((x, i) => i ? x : capitaliser(x));
-  $('hero-tokens').innerHTML = chips(tokens);
-  $('hero-output').textContent = visible(9) ? vocabulaire[argmax(d.p)] : '?';
+  $('hero-tokens').innerHTML = visible(0) ? chips(tokens) : escape(phraseAffichee()) + '…';
+  $('hero-output').textContent = visible(9) ? prediction(d.p) : '?';
   $('guide-title').textContent = numero === 0 ? 'Bienvenue dans le labo !' : 'Indice de MicroAlbert';
-  $('guide-text').textContent = numero === 0 ? 'Suis le calcul d’une tête d’attention pour compléter la phrase.' : etapes[numero][3];
+  $('guide-text').textContent = invitations[numero];
   $('guide-phrase').textContent = '« ' + phraseAffichee() + ' … ? »';
-  $('tokens').innerHTML = para('On découpe la phrase en tokens.') + '<div class="tokens">' + chips(tokens) + '</div>' +
+  $('tokens').innerHTML = !visible(0) ? para('Propose un découpage de la phrase pour afficher les tokens.') : para('On découpe la phrase en tokens.') + '<div class="tokens">' + chips(tokens) + '</div>' +
     para('Nombre de tokens <strong>' + tokens.length + '</strong>') + '<p class="tip">💡 Un token est une unité de texte traitée par le modèle.</p>';
-  $('embeddings').innerHTML = para('Chaque token est représenté par un vecteur <em>x</em> à deux coordonnées.') +
+  $('embeddings').innerHTML = !visible(1) ? para('Les vecteurs apparaissent après ta réponse à l’étape Embeddings.') : para('Chaque token est représenté par un vecteur <em>x</em> à deux coordonnées.') +
     table(['Token', 'x'], tokens.map((t, i) => [escape(t), '[' + d.X[i].join(' ; ') + ']']), 'mini');
   if (refaireMatrices) {
     const etat = mode === 'free' ? 'Coefficients de simulation manuelle.' : iteration ? 'Paramètres après ' + iteration + ' mise(s) à jour.' : 'Paramètres initialisés avant apprentissage.';
-    $('matrices').innerHTML = para(etat) + matrices() +
+    $('matrices').innerHTML = !visible(2) ? para('Les matrices apparaissent après ta réponse à l’étape Paramètres.') : para(etat) + matrices() +
       (mode === 'free' ? para('Valide une cellule pour recalculer les activations.') : '<button data-mode="free">Modifier en simulation</button>');
   }
   $('apercu').innerHTML = visible(5) ? para('Poids α de la dernière requête (0 à 1)') +
@@ -98,7 +108,7 @@ function petiteVue(d, refaireMatrices) {
     para('Poids d’attention de la dernière requête') + '<div class="plot" aria-hidden="true">' +
     tokens.map(t => '<div class="bar"><span>·</span><div class="bar-track"></div><span>' + escape(t) + '</span></div>').join('') + '</div>' + para('Valeurs à l’étape Softmax.');
   $('resultat').innerHTML = '<strong>◎　Résultat de la prédiction</strong><span class="sentence">' +
-    escape(phraseAffichee()) + ' <mark>' + (visible(9) ? vocabulaire[argmax(d.p)] + '.' : '… ?') + '</mark></span>' +
+    escape(phraseAffichee()) + ' <mark>' + (visible(9) ? prediction(d.p) + '.' : '… ?') + '</mark></span>' +
     (visible(8) ? '<span>Probabilités finales</span>' + d.p.map((p, i) => '<span class="chip">' + vocabulaire[i] + ' · ' + fmt(p * 100) + ' %</span>').join('') : '');
 }
 
@@ -125,7 +135,8 @@ function calcul(d) {
   if (numero === 6) return para('Chaque poids α multiplie les deux coordonnées de la valeur v. La somme des vecteurs obtenus donne deux coordonnées.') +
     table(['Position', 'Produit α × v'], rows.map((r,i) => [r, fmt(d.attention[i]) + ' × ' + vec(d.V[i]) + ' = ' + vec(d.produits[i])])) +
     para('Somme par coordonnée = [' + [0,1].map(j => d.produits.map(v => '(' + fmt(v[j]) + ')').join(' + ')).join(' ; ') + '].') +
-    para('z = ' + vec(d.z) + ($('ablation').checked ? ' (ablation active).' : '.'));
+    para('Somme calculée = ' + vec(d.sommeValeurs) + '.') +
+    para($('ablation').checked ? 'Ablation : on force ensuite z = ' + vec(d.z) + '.' : 'z reçoit cette somme : ' + vec(d.z) + '.');
   if (numero === 7) return para('Le chemin résiduel conserve la contribution du dernier embedding. Les deux vecteurs sont de taille 2.') +
     para('h = x final + z = ' + vec(d.X.at(-1)) + ' + ' + vec(d.z) + ' = ' + vec(d.h) + '.');
   if (numero === 8) return para('La projection fixe prend h₂ pour Python et −h₂ pour HTML. Le softmax s’applique aux deux logits. Son maximum m vaut ' +
@@ -155,6 +166,10 @@ function question(item, id) {
 }
 
 function dessinerQuiz() {
+  if (!visible(9)) {
+    $('quiz-contenu').innerHTML = para('Le quiz s’ouvre après ta tentative à l’étape Prédiction.');
+    return;
+  }
   $('quiz-contenu').innerHTML = para('Une tentative par question. Le corrigé explique le résultat après validation. Les réponses restent dans ce navigateur.') +
     filtreQuiz.map(i => '<details><summary>' + (i < 20 ? 'Livret ' + (i+1) : 'Transfert') + ' · ' + livret[i][0] +
       (reponses['livret'+i] !== undefined ? ' ✓' : '') + '</summary>' + question(livret[i], 'livret'+i) + '</details>').join('');
@@ -167,11 +182,11 @@ function progression() {
 
 function chaine() {
   const boutons = etapes.map(([nom, sous], i) => '<button data-step="' + i + '"' +
-    (i === numero ? ' aria-current="step"' : '') + '>' + nom + '<small>' + sous + '</small></button>');
+    (i === numero ? ' aria-current="step"' : '') + (accessible(i) ? '' : ' disabled') + '>' + nom + '<small>' + sous + '</small></button>');
   $('chaine').innerHTML = [[0],[1],[2,3],[4],[5],[6,7],[8,9]].map(indices =>
     '<span class="chain-group">' + indices.map(i => boutons[i]).join('') + '</span>').join('');
   $('precedent').disabled = numero === 0;
-  $('suivant').disabled = $('suivant-calcul').disabled = numero === etapes.length - 1;
+  $('suivant').disabled = $('suivant-calcul').disabled = numero === etapes.length - 1 || !accessible(numero+1);
 }
 function comparaison() {
   if (!visible(9)) {
@@ -180,7 +195,7 @@ function comparaison() {
   }
   const donnees = tests.map(([s, y]) => {
     const d = propager(poids(), s, y, $('ablation').checked);
-    return [s, vec(d.X.at(-1)), vec(d.z), vec(d.h), ...d.p.map(fmt), vocabulaire[argmax(d.p)], vocabulaire[y]];
+    return [s, vec(d.X.at(-1)), vec(d.z), vec(d.h), ...d.p.map(fmt), prediction(d.p), vocabulaire[y]];
   });
   $('comparaison-contenu').innerHTML = para('Même dernier token, mêmes paramètres pendant les deux propagations. Deux exemples ne permettent pas d’établir une généralisation linguistique.') +
     table(['Phrase hors corpus', 'Dernier x', 'z', 'h', ...vocabulaire, 'Argmax', 'Cible'], donnees) +
@@ -193,7 +208,7 @@ function dessinerTrace() {
   const donnees = mesurer(W);
   $('trace').innerHTML = fiche('Itération ' + iteration + ' / 20 · graine ' + graine,
     table(['Contexte', 'Prédiction', 'Cible', 'Probabilité cible', 'Perte'], donnees.exemples.map(d =>
-      [d.phrase, vocabulaire[argmax(d.p)], reveler ? vocabulaire[d.cible] : 'Masquée', reveler ? fmt(d.p[d.cible]) : '—', reveler ? fmt(d.loss) : '—']))) +
+      [d.phrase, prediction(d.p), reveler ? vocabulaire[d.cible] : 'Masquée', reveler ? fmt(d.p[d.cible]) : '—', reveler ? fmt(d.loss) : '—']))) +
     (reveler ? para('Moyenne = (' + donnees.exemples.map(d => fmt(d.loss)).join(' + ') + ') / 4 = ' + fmt(donnees.moyenne)) : '');
   for (const button of document.querySelectorAll('[data-pas]')) button.disabled = actif || iteration === 20;
   $('pause').disabled = !actif;
@@ -255,8 +270,9 @@ function draw({ matrices: redo = true, trace = true } = {}) {
   $('calcul').hidden = !$('details').checked;
   $('etape-titre').textContent = (numero+1) + ' · ' + etapes[numero][0];
   $('calcul-contenu').innerHTML = question(etapes[numero].slice(2), 'etape'+numero) +
-    '<details id="operation"' + (reponses['etape'+numero] !== undefined || mode !== 'guide' || $('prof').checked ? ' open' : '') +
-    '><summary>Voir le calcul pour le contexte choisi</summary>' + calcul(d) + '</details>';
+    (visible(numero)
+      ? '<details id="operation" open><summary>Voir le calcul pour le contexte choisi</summary>' + calcul(d) + '</details>'
+      : para('Valide une réponse pour ouvrir le calcul et l’étape suivante.'));
   $('entrainement').hidden = mode !== 'train';
   if (trace) dessinerTrace();
   comparaison();
@@ -264,8 +280,9 @@ function draw({ matrices: redo = true, trace = true } = {}) {
 }
 
 function aller(n) {
+  if (!accessible(n)) return;
   numero = Math.max(0, Math.min(etapes.length-1, n));
-  maxNumero = Math.max(maxNumero, numero);
+  poser('explication');
   draw({trace:false});
   if (!$('calcul').hidden) $('etape-titre').focus();
   else $('chaine').querySelector('[aria-current]').focus();
@@ -274,8 +291,11 @@ function aller(n) {
 function changerMode(nouveau) {
   if (nouveau !== 'train') suspendre();
   mode = nouveau;
+  if (!accessible(numero)) numero = etapes.findIndex((_, i) => !visible(i));
+  poser('explication');
   for (const button of document.querySelectorAll('.modes button')) button.setAttribute('aria-pressed', button.dataset.mode === mode);
   draw();
+  dessinerQuiz();
 }
 function choisirExemple(value) {
   $('exemple').value = exemple = value;
@@ -310,7 +330,8 @@ function repartir(nouvelleOrigine, nouvelleGraine) {
   libre = clone(W);
   libreMeta = { origine, graine };
   iteration = 0;
-  numero = maxNumero = 0;
+  numero = 0;
+  poser('explication');
   historique = [mesurer(W).moyenne];
   matricesHistoriques = [W];
   $('ablation').checked = false;
@@ -351,13 +372,17 @@ document.addEventListener('submit', event => {
   event.preventDefault();
   if (reponses[id] !== undefined) return;
   reponses[id] = Number(new FormData(event.target).get('choix'));
-  sauver('reponses', reponses);
+  sauver('reponses-v2', reponses);
   if (id.startsWith('livret')) {
     const wrapper = event.target.closest('details');
     const i = Number(id.slice(6));
     wrapper.querySelector('summary').textContent += ' ✓';
     event.target.outerHTML = question(livret[i], id);
-  } else draw({matrices:false,trace:false});
+  } else {
+    poser('validation');
+    draw({trace:false});
+    if (numero === 9) dessinerQuiz();
+  }
   progression();
   const correction = document.querySelector('[data-question="' + id + '"] .tip');
   correction?.setAttribute('tabindex', '-1');
@@ -392,13 +417,24 @@ $('precedent').addEventListener('click', () => aller(numero-1));
 $('exemple').addEventListener('change', e => choisirExemple(e.target.value));
 $('ablation').addEventListener('change', () => draw({matrices:false,trace:false}));
 $('details').addEventListener('change', () => { $('calcul').hidden = !$('details').checked; });
-$('prof').addEventListener('change', () => { draw(); dessinerQuiz(); });
+$('prof').addEventListener('change', () => {
+  if (!accessible(numero)) numero = etapes.findIndex((_, i) => !visible(i));
+  poser('explication');
+  draw();
+  dessinerQuiz();
+});
+$('calcul-contenu').addEventListener('change', event => {
+  if (event.target.matches('[type=radio]')) poser('reflexion');
+});
+$('calcul-contenu').addEventListener('toggle', event => {
+  if (event.target.open && event.target.matches('form details')) poser('reflexion');
+}, true);
 for (const id of ['cibles','papier']) $(id).addEventListener('change', dessinerTrace);
 $('pause').addEventListener('click', () => { suspendre(); dessinerTrace(); feedback('Entraînement en pause.'); });
 $('reset').addEventListener('click', () => {
   if (!window.confirm('Revenir à la graine 12 et effacer les modifications et la progression locale ?')) return;
   reponses = {};
-  sauver('reponses', reponses);
+  sauver('reponses-v2', reponses);
   repartir('reference', 12);
   dessinerQuiz();
   feedback('État de référence restauré.');

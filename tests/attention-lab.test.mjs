@@ -33,7 +33,13 @@ test('ablation, invariance à V, gradients nuls, mise à jour simultanée, infé
   const W = initialiser();
   for (const [s,y] of horsCorpus) {
     assert.ok(!corpus.some(([phrase]) => phrase === s));
-    assert.deepEqual(propager(W,s,y,true).p, [.5,.5]);
+    const normal = propager(W,s,y);
+    const ablation = propager(W,s,y,true);
+    assert.deepEqual(ablation.p, [.5,.5]);
+    assert.deepEqual(ablation.sommeValeurs, normal.z);
+    assert.deepEqual(ablation.produits, normal.produits);
+    assert.deepEqual(ablation.z, [0,0]);
+    assert.deepEqual(ablation.h, normal.X.at(-1));
     const altered = initialiser();
     altered[2][1][1] = 1;
     assert.deepEqual(propager(W,s).attention, propager(altered,s).attention);

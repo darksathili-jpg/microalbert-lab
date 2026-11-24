@@ -16,8 +16,13 @@ try {
   await page.goto(base);
   await page.getByRole('link',{name:'Laboratoire d’attention'}).click();
   const text = selector => page.locator(selector).textContent();
-  assert.match(await text('#tokens'), /Nombre de tokens\s*6/);
-  assert.doesNotMatch(await text('#resultat'), /Python|HTML/);
+  await page.locator('[data-question="etape0"]').waitFor();
+  assert.match(await text('#tokens'), /Propose un découpage/);
+  for (const selector of ['#resultat','#hero-output','#comparaison-contenu','#quiz-contenu']) {
+    assert.doesNotMatch(await text(selector), /Python|HTML|0,60295/);
+  }
+  assert.ok(await page.locator('[data-step="9"]').isDisabled());
+  assert.equal(await page.locator('#operation').count(),0);
   async function capture(name) {
     await page.evaluate(() => window.scrollTo(0,0));
     await page.screenshot({path:captures+'/'+name+'.png'});
@@ -26,6 +31,12 @@ try {
     await page.setViewportSize({width,height});
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth),width);
     await capture(width+'x'+height+'-nuit');
+    for (const theme of ['clair','projecteur']) {
+      await page.locator('#theme').selectOption(theme);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth),width);
+      await capture(width+'x'+height+'-'+theme);
+    }
+    await page.locator('#theme').selectOption('nuit');
   }
   await page.locator('.overview').scrollIntoViewIfNeeded();
   await page.screenshot({path:captures+'/mobile-cartes.png'});
@@ -35,16 +46,25 @@ try {
     await capture('1672x941-'+theme);
   }
   await page.locator('#theme').selectOption('nuit');
-  await page.locator('#suivant').focus();
-  await page.keyboard.press('Enter');
-  assert.equal(await page.evaluate(() => document.activeElement.id),'etape-titre');
-  for (let i=1;i<10;i++) {
-    await page.locator('[data-step="'+i+'"]').click();
+  for (let i=0;i<10;i++) {
+    if (i === 1) {
+      await page.locator('#suivant').focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await page.evaluate(() => document.activeElement.id),'etape-titre');
+    } else if (i) await page.locator('[data-step="'+i+'"]').click();
     assert.match(await text('#etape-titre'), new RegExp('^'+(i+1)));
-    await page.locator('#operation > summary').click();
+    assert.equal(await page.locator('#operation').count(),0);
+    if (i === 9) assert.doesNotMatch(await text('#comparaison-contenu'), /Python|HTML/);
+    await page.locator('[data-question="etape'+i+'"] input[value="0"]').check();
+    assert.equal(await page.locator('#mascotte').getAttribute('data-pose'),'reflexion');
+    if (i === 0) await page.locator('.intro').screenshot({path:captures+'/mascotte-reflexion.png'});
+    await page.locator('[data-question="etape'+i+'"] button').click();
+    assert.equal(await page.locator('#mascotte').getAttribute('data-pose'),'validation');
+    if (i === 0) await page.locator('.intro').screenshot({path:captures+'/mascotte-validation.png'});
     assert.ok(await page.locator('#operation table, #operation p').first().isVisible());
     if ([3,5,8].includes(i)) await page.locator('#calcul').screenshot({path:captures+'/calcul-'+(i+1)+'.png'});
   }
+  await capture('decouverte-resultat');
   await page.locator('#precedent').click();
   assert.match(await text('#etape-titre'), /^9/);
   await page.locator('.modes [data-mode=free]').click();
@@ -78,6 +98,11 @@ try {
   assert.match(await text('#trace'),/0,40603/);
   assert.match(await text('#comparaison-contenu'),/0,60295.*0,64925/s);
   await page.locator('#ablation').check();
+  assert.match(await text('#hero-output'), /Égalité/);
+  await page.locator('[data-step="6"]').click();
+  assert.match(await text('#operation'),/Somme calculée = .*Ablation : on force ensuite z = \[0,00000 ; 0,00000\]/s);
+  await page.locator('[data-step="9"]').click();
+  assert.match(await text('#operation'),/égalité, premier candidat par convention/);
   assert.equal((await text('#comparaison-contenu')).match(/0,50000/g).length,4);
   await page.locator('#ablation').uncheck();
   await capture('entrainement-20');
@@ -118,6 +143,13 @@ try {
   await page.getByRole('link',{name:'Livret élève (PDF)'}).click();
   assert.equal((await pdfDownload).suggestedFilename(),'01_Livret_eleve.pdf');
   await page.setViewportSize({width:390,height:844});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.locator('.mascotte img').first().evaluate(e=>getComputedStyle(e).transitionDuration),'0s');
+  await page.locator('.intro').scrollIntoViewIfNeeded();
+  const pose = await page.locator('.mascotte img').last().boundingBox();
+  const modes = await page.locator('.mode-box').boundingBox();
+  assert.ok(pose.y + pose.height <= modes.y, 'La pose mobile reste au-dessus des modes');
+  await page.screenshot({path:captures+'/mobile-mascotte.png'});
   await page.locator('.modes [data-mode=free]').click();
   await page.locator('[data-cell="0,0,0"]').fill('1');
   await page.locator('[data-cell="0,0,0"]').press('Tab');
