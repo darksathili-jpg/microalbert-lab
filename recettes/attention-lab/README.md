@@ -1,6 +1,6 @@
 # Recette du laboratoire d’attention
 
-Code vérifié au commit `0e9cca1`, branche `feature/attention-lab`, issue de `main` (`4457687`). Le dépôt de départ proposait une mission Albert statique. L’accueil relie désormais les deux parcours. Le moteur de la mission est conservé et le sprite fourni est chargé par son mécanisme existant.
+Cycle final de G5, sur `feature/attention-lab` à partir de `e011454`. Le code vérifié est publié au commit [`c2b1c1e48feec2cf0201e53c2cd5954c52d9ff7c`](https://github.com/darksathili-jpg/microalbert-lab/commit/c2b1c1e48feec2cf0201e53c2cd5954c52d9ff7c). Les commandes ont été exécutées sur le commit local `461387f47861fda66adb9df7fdf8c7a57f90f539`. L’arbre Git `db2f07292c8da0f72b960d321c0b7aab58a69ac3` est identique pour les deux commits. Les preuves et le ZIP sont dans le commit suivant.
 
 ## Résultats
 
@@ -10,9 +10,11 @@ Code vérifié au commit `0e9cca1`, branche `feature/attention-lab`, issue de `m
 | `python verification.py` et `python export_reference.py`, NumPy 2.3.5 | 21 états et 126 propagations, normalisation, perte strictement décroissante et tests finaux. `cmp` a confirmé l’identité octet pour octet avec le JSON fourni. |
 | Comparaison JavaScript/JSON | Tolérance absolue 10⁻⁸ sur X, Q, K, V, scores, α, z, h, logits, probabilités et pertes, 10⁻⁶ sur états, gradients et perte moyenne. Tolérance 10⁻¹² sur les normalisations. Aucun écart au-delà des seuils. |
 | Cas scientifiques et validation des états | Softmax stable, gradients nuls attendus, isolement corpus/test, ablation, invariance de α à WV, inférence pure, mise à jour simultanée, entrées invalides et validation de la provenance à l’import. |
-| Playwright 1.62.1, Chromium 156 | Découverte en dix étapes, précédent/suivant, clavier, trois modes, édition matrice, rejet d’un mot inconnu, calcul papier, pause et reprise, entraînement à 20 pas, comparaison, ablation, quiz, persistance des réponses, restauration graine 12, import/export, quatre liens PDF, téléchargement réel du livret et mission Albert jouée jusqu’à la cible. Aucune erreur console ni réponse HTTP en échec pendant le scénario. |
+| Playwright 1.62.1, Chromium 156 | Découverte en dix étapes avec contrôle du verrouillage avant tentative, précédent/suivant, clavier, trois modes, édition matrice, rejet d’un mot inconnu, calcul papier, pause et reprise, entraînement à 20 pas, comparaison, ablation, quiz, persistance des réponses, restauration graine 12, import/export, trois poses, respect du mouvement réduit, absence de débordement de la mascotte sur mobile, quatre liens PDF, téléchargement réel du livret et mission Albert jouée jusqu’à la cible. Aucune erreur console ni réponse HTTP en échec pendant le scénario. |
 | axe-core 4.14.1 | Aucune violation automatisée pour les règles WCAG 2.0 et 2.1 A/AA testées sur les neuf combinaisons thème/mode. Ce résultat couvre les états inspectés par le script. |
 | Build statique | Assemblage avec `build.sh`, test d’intégrité ZIP, routes et fichiers servis sous `/microalbert-lab/`. |
+
+Journaux bruts de recette. [Node](node.log) · [Chromium et axe-core](chromium.log) · [Moteur Python](verification.log) · [Export Python](python-export.log).
 
 Avec la graine 12, la perte moyenne passe de **0,82571** à **0,40603** après 20 mises à jour. Le test NSI donne **0,60295** pour Python, et le test web **0,64925** pour HTML. L’ablation donne **0,5 / 0,5** pour ces deux phrases. Les sorties proviennent du moteur et les poids restent fixes en inférence. Les deux phrases de test vérifient cette tâche étroite avec des embeddings choisis à la main.
 
@@ -47,15 +49,23 @@ Le [build statique vérifié](microalbert-lab-statique.zip) contient un dossier 
 
 ## Vérification visuelle
 
-- [Côte à côte](captures/cote-a-cote.jpg) et [superposition à opacité égale](captures/superposition.jpg), établis à partir du rendu et de la maquette à 1672 × 941. Le rendu est à gauche dans la comparaison.
-- Nuit aux quatre résolutions demandées. [1672 × 941](captures/1672x941-nuit.jpg) · [1440 × 900](captures/1440x900-nuit.jpg) · [1280 × 720](captures/1280x720-nuit.jpg) · [390 × 844](captures/390x844-nuit.jpg) · [Cartes sur mobile](captures/mobile-cartes.jpg).
-- [Clair](captures/1672x941-clair.jpg) · [Projecteur](captures/1672x941-projecteur.jpg).
-- [Multiplications Q/K/V](captures/calcul-4.jpg) · [Softmax d’attention](captures/calcul-6.jpg) · [Softmax de sortie](captures/calcul-9.jpg) · [Résultat après 20 pas](captures/entrainement-20.jpg) · [Trace d’entraînement](captures/trace-20.jpg).
+[Comparaison côte à côte](captures/cote-a-cote.jpg) et [superposition à opacité égale](captures/superposition.jpg), obtenues à 1672 × 941, sans mise à l’échelle des sources. Le rendu est à gauche. Cette vue est prise à la fin de la découverte, aux poids initiaux, pour rendre visibles les valeurs dans les cartes.
 
-La première capture a révélé un titre replié à la résolution native, des cellules dépassant de leur carte et des commandes sous le bord de l’écran. Les largeurs de titre et de cartes, le tableau des paramètres et la densité verticale ont été ajustés. Une erreur JavaScript au rendu initial du questionnaire et une requête d’icône manquante ont été corrigées et contrôlées sur les scénarios rejoués. La pause annule la minuterie, afin qu’une reprise ne conserve aucun pas déjà programmé.
+| Résolution | Nuit | Clair | Projecteur |
+| --- | --- | --- | --- |
+| 1672 × 941 | [Capture](captures/1672x941-nuit.jpg) | [Capture](captures/1672x941-clair.jpg) | [Capture](captures/1672x941-projecteur.jpg) |
+| 1440 × 900 | [Capture](captures/1440x900-nuit.jpg) | [Capture](captures/1440x900-clair.jpg) | [Capture](captures/1440x900-projecteur.jpg) |
+| 1280 × 720 | [Capture](captures/1280x720-nuit.jpg) | [Capture](captures/1280x720-clair.jpg) | [Capture](captures/1280x720-projecteur.jpg) |
+| 390 × 844 | [Capture](captures/390x844-nuit.jpg) | [Capture](captures/390x844-clair.jpg) | [Capture](captures/390x844-projecteur.jpg) |
 
-La maquette montre un graphique chiffré et trois candidats dès l’arrivée. Le parcours élève dévoile les poids et la sortie aux étapes de calcul correspondantes, et le modèle n’a que deux candidats. La barre latérale contient les destinations disponibles. La chaîne conserve sept groupes visuels avec dix étapes accessibles. Le personnage utilise la pose frontale immobile de l’atlas livré et conserve son canal alpha. La pose avec baguette et les effets lumineux du bandeau restent des écarts visuels par rapport à la maquette. Les éléments se réorganisent lorsque la largeur diminue.
+- Pose d’explication de profil, réflexion de face et légèrement inclinée, validation de face et légèrement agrandie. Les deux images proviennent de cellules immobiles de l’atlas et restent ancrées en bas. Le fondu et les transformations sont désactivés lorsque le mouvement est réduit. Chromium a détecté un débordement vertical mobile lors de l’inspection, corrigé par le dimensionnement de la grille et contrôlé par une assertion géométrique. [Explication sur mobile](captures/mobile-mascotte.jpg) · [Réflexion](captures/mascotte-reflexion.jpg) · [Validation](captures/mascotte-validation.jpg).
+- Progression élève. La tentative ouvre le calcul et le bouton suivant. Les valeurs des cartes, l’argmax, la comparaison et le quiz sont dévoilés à leur étape. Les modes de simulation et professeur conservent l’accès direct. Les réponses existantes du livret sont reprises lors de la migration locale. [Découverte terminée](captures/decouverte-resultat.jpg) · [Projections Q/K/V](captures/calcul-4.jpg) · [Softmax d’attention](captures/calcul-6.jpg) · [Softmax de sortie](captures/calcul-9.jpg).
+- Calcul. L’ablation affiche la somme pondérée réellement calculée, puis force z à zéro avant le résidu. Les probabilités égales sont signalées et le calcul détaillé indique la convention de départage de l’argmax. HTML reste présenté comme langage de balisage. [Résultat après 20 pas](captures/entrainement-20.jpg) · [Trace d’entraînement](captures/trace-20.jpg).
 
-## Publication
+Le bandeau reprend la pastille de séance, le diagramme et les halos cyan et violet. La position exacte des courbes et du diagramme, la typographie, le cadrage du personnage sans baguette et la densité de la navigation restent différents. Les sept groupes visuels contiennent dix étapes. La sortie à deux candidats et les poids calculés diffèrent des valeurs illustratives de la maquette. La prédiction initiale NSI est HTML à 0,62246, puis Python à 0,60295 après apprentissage.
 
-L’API Pages indique une publication de type workflow et la source déclarée `feature/g4-github-pages-preview`. Le workflow de cette branche assemble le site et le parcours existants vers l’URL Pages du projet. Il se déclenche uniquement sur cette branche et ne fournit pas d’URL isolée pour la branche Attention Lab. Le build et les preuves ci-dessus constituent la livraison de recette. La fusion et la publication restent soumises à la validation humaine.
+## Prévisualisation GitHub Pages
+
+L’API Pages indique un déploiement par workflow sur l’URL du site existant. Le workflow est déclenché uniquement par un push sur `feature/g4-github-pages-preview`. Un déploiement depuis la branche de travail vers le même site remplacerait l’artefact courant, même si l’environnement GitHub Actions portait un autre nom. Ajouter un sous-chemin de recette exigerait d’intégrer le build au workflow du site existant. Un dépôt Pages distinct donnerait une URL isolée et nécessiterait l’autorisation de créer et configurer ce dépôt.
+
+L’URL existante a répondu et son `revision.txt` indiquait `82325ca514fc4f9435f5d6b1c6f5df548569ec99`. Le build statique joint est la prévisualisation de recette disponible. Aucun déploiement ni changement de configuration Pages n’a été effectué.

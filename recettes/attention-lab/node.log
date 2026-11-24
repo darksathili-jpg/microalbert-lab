@@ -1,0 +1,18 @@
+✔ 21 états et 126 propagations comparés au moteur NumPy (66.924559ms)
+✔ ablation, invariance à V, gradients nuls, mise à jour simultanée, inférence pure (4.965407ms)
+✔ stabilité, tokenisation et entrées invalides (0.684677ms)
+✔ graine reproductible et import versionné sans falsifier la provenance (2.041571ms)
+✔ atteindre la cible après des déplacements réels (1.37389ms)
+✔ un programme incomplet ne valide pas la mission (0.130305ms)
+✔ les obstacles bloquent la position (0.378988ms)
+✔ sortir de la grille est interdit (0.237225ms)
+✔ une commande inconnue et une séquence trop longue sont refusées (0.226981ms)
+✔ les données de mission ne sont pas modifiées (0.174542ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.00134
