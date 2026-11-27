@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr" data-theme="nuit">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L’attention dans un modèle de langage · MicroAlbert</title>
+<link rel="icon" href="portrait.png">
+<link rel="stylesheet" href="style.css"><script type="module" src="labo.mjs"></script>
+</head>
+<body>
+<header class="top">
+<a class="brand" href="../"><img src="portrait.png" alt=""><span><strong>Micro<span>Albert</span></strong><small>Numérique et Sciences Informatiques</small></span></a>
+<nav aria-label="Navigation principale"><a href="../">⌂ Accueil</a><a class="active" href="./" aria-current="page">⚗ Labo d’expérimentation</a><a href="#calcul">▤ Cours</a><a href="#supports">▧ TP débranchés</a><a href="#glossaire">▣ Ressources</a></nav>
+<label for="theme" class="appearance">Affichage <select id="theme"><option value="nuit">Nuit</option><option value="clair">Clair</option><option value="projecteur">Projecteur</option></select></label>
+</header>
+<div class="layout">
+<aside class="sidebar" aria-label="Parcours LLM et Transformers">
+<h2>⌂ Parcours LLM &amp; Transformers</h2>
+<nav aria-label="Parcours du laboratoire">
+<a href="#calcul"><b>1</b> Transformer et attention</a>
+<a class="active" href="#laboratoire">⚗ Labo — Attention pas à pas</a>
+<a href="#supports">▧ TP — Le Transformer humain</a>
+<a href="#quiz">▤ Quiz</a>
+<a href="#entrainement" data-mode="train"><b>2</b> L’entraînement</a>
+<a href="#comparaison"><b>3</b> Tester sans réentraîner</a>
+<a href="../missions-albert/">Missions Albert</a>
+</nav>
+<section class="progress"><h2>Votre progression</h2><progress aria-label="Questions du livret traitées" id="progression" max="20" value="0"></progress><p id="progression-label"></p></section>
+</aside>
+<main id="laboratoire">
+<section class="hero">
+<div><span class="badge">Séance 2 · Laboratoire interactif</span><h1>L’attention dans un modèle de langage</h1><p>Expérimente, visualise et comprends chaque étape du mécanisme d’attention.</p></div>
+<div class="diagram" aria-label="Les tokens alimentent l’attention puis la prédiction"><div id="hero-tokens"></div><div class="connector" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="diagram-sortie"><strong>Attention</strong> <span aria-hidden="true">⟶</span> <strong id="hero-output">?</strong></div></div>
+</section>
+<section class="intro">
+<div class="guide"><div class="mascotte" id="mascotte" data-pose="explication" role="img" aria-label="MicroAlbert, personnage guide"><img src="microalbert.png" alt=""><img src="microalbert-profil.png" alt=""></div><div class="bubble"><strong id="guide-title">Bienvenue dans le labo !</strong><p id="guide-text">Suis le calcul d’une tête d’attention pour compléter la phrase.</p><b id="guide-phrase">« En NSI, tu vas programmer en … ? »</b></div></div>
+<div class="mode-box"><h2>🚀 Choisis ton mode d’expérimentation</h2>
+<div class="modes">
+<button data-mode="guide" aria-pressed="true"><strong>♧　Découverte</strong><span>Guidée pas à pas<br>avec explications</span></button>
+<button data-mode="free" aria-pressed="false"><strong>☷　Simulation libre</strong><span>Modifie les matrices<br>et observe les effets</span></button>
+<button data-mode="train" aria-pressed="false"><strong>◎　Entraînement</strong><span>Apprends W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub><br>sur un petit corpus</span></button>
+</div></div>
+</section>
+<nav id="chaine" class="chain" aria-label="Chaîne des opérations"></nav>
+<div class="overview">
+<section class="card"><h2><b>1</b> Tokenisation</h2><div id="tokens" class="inner"></div></section>
+<section class="card"><h2><b>2</b> Représentations (embeddings)</h2><div id="embeddings" class="inner"></div></section>
+<section class="card"><h2><b>3</b> Paramètres W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub></h2><div id="matrices" class="inner"></div></section>
+<section class="card"><h2>Aperçu de l’attention</h2><div id="apercu" class="inner"></div></section>
+</div>
+<section id="resultat" class="result" aria-label="Résultat de la prédiction"></section>
+<div class="actions"><button id="suivant" class="primary">▶ Lancer l’étape suivante</button><button id="reset">⟳ Réinitialiser</button><button id="aleatoire">⚄ Nouvelle initialisation</button><label><input type="checkbox" id="details" checked> Afficher les détails de calcul</label></div>
+<p id="status" role="status"></p>
+<section id="reglages" class="card pane">
+<h2>Contexte et paramètres</h2><div class="inner controls">
+<label>Exemple <select id="exemple"><option value="nsi">Test NSI</option><option value="web">Test web</option><option value="papier">Exemple du livret</option><option value="libre">Phrase libre</option></select></label>
+<form id="phrase-form" hidden><label>Phrase <input id="phrase" required maxlength="240" size="30"></label> <button>Calculer</button></form>
+<label><input id="ablation" type="checkbox"> Ablation (forcer z = 0)</label>
+<label><input id="prof" type="checkbox"> Mode professeur</label>
+<button id="export">Exporter l’état</button><label class="import">Importer un état <input id="import" type="file" accept=".json,application/json"></label>
+</div>
+</section>
+<section id="calcul" class="card pane"><h2 id="etape-titre" tabindex="-1"></h2><div class="inner" id="calcul-contenu"></div><div class="inner"><button id="precedent">← Étape précédente</button> <button id="suivant-calcul" class="primary">Étape suivante →</button></div></section>
+<section id="entrainement" class="card pane" hidden>
+<h2>Entraînement sur quatre exemples</h2>
+<div class="inner">
+<p>La cible est le mot attendu. La perte mesure l’erreur sur cette cible. Les quatre phrases servent à mettre à jour les paramètres. Les deux phrases de test sont évaluées à poids fixes.</p>
+<div class="controls"><button data-pas="1">1 pas</button><button data-pas="5">5 pas</button><button data-pas="20">20 pas</button><button id="pause">Pause</button><label><input id="cibles" type="checkbox"> Révéler cibles et pertes</label><label><input id="papier" type="checkbox"> Estimation papier (ε = 0,1)</label></div>
+<div id="trace"></div>
+<details><summary>Comment les grands modèles calculent le gradient</summary><p>La rétropropagation part de la perte et applique la règle de dérivation en chaîne, de la sortie vers les paramètres. Pour une composition f(g(w)), la dérivée est f′(g(w)) × g′(w). Elle réutilise les activations de la propagation et cumule les contributions lorsque plusieurs chemins rejoignent le même paramètre. Ici, deux évaluations de la perte par coefficient donnent une approximation numérique du gradient.</p></details>
+</div></section>
+<section id="comparaison" class="card pane"><h2>Inférence · comparer NSI et web</h2><div class="inner" id="comparaison-contenu"></div></section>
+<section id="quiz" class="card pane"><h2>Questions du livret</h2><div class="inner" id="quiz-contenu"></div></section>
+<section id="supports" class="card pane"><h2>Le Transformer humain · supports imprimables</h2><div class="inner">
+<ul><li><a href="supports/01_Livret_eleve.pdf" download>Livret élève (PDF)</a></li><li><a href="supports/02_Guide_corrige.pdf" download>Guide et corrigé (PDF)</a></li><li><a href="supports/03_Cartes.pdf" download>Cartes à découper (PDF)</a></li><li><a href="supports/04_Plateau_A3.pdf" download>Plateau A3 (PDF)</a></li></ul>
+<ol><li>55 min · Vocabulaire et cartes (10 min), projections Q/K/V (15 min), attention (15 min), sortie (10 min), bilan (5 min).</li><li>55 min · Corpus et perte (10 min), différences finies en groupes (20 min), mise à jour et trace (15 min), bilan (10 min).</li><li>55 min · Test NSI (25 min), test web (15 min), ablation (10 min), diagnostic (5 min).</li></ol>
+<button id="imprimer">Imprimer le parcours</button></div></section>
+<section id="glossaire" class="card pane"><h2>Glossaire et limites</h2><dl class="inner">
+<dt>Token et embedding</dt><dd>Un token est une unité de texte. Son embedding est un vecteur de deux coordonnées. Le codage opposé NSI/web est fixé par l’auteur et injecte une distinction connue.</dd>
+<dt>Paramètre et activation</dt><dd>Un paramètre est un coefficient conservé entre deux phrases. Une activation est une valeur recalculée pour chaque phrase.</dd>
+<dt>Q, K, V</dt><dd>Tables des requêtes, des clés et des valeurs. La dernière requête q compare son contenu à chaque clé k. Les poids obtenus pondèrent les valeurs v.</dd>
+<dt>Softmax, poids α et contexte z</dt><dd>Le softmax normalise des exponentielles en valeurs positives de somme 1. Sur les positions, il donne α, les poids d’attention. La somme pondérée z est un vecteur de contexte.</dd>
+<dt>Résidu h et logits</dt><dd>h additionne l’embedding de la dernière position et z. Les logits sont des scores de sortie transformés en probabilités par un second softmax.</dd>
+<dt>Perte, gradient et inférence</dt><dd>La perte quantifie l’erreur par le logarithme népérien de la probabilité cible, changé de signe. Le gradient indique la variation de la perte par coefficient. En inférence, on calcule une sortie avec les paramètres fixes.</dd>
+<dt>Modèle pédagogique</dt><dd>Une seule tête, vocabulaire de sortie Python et HTML (balisage), projection d’attention identité, sans encodage de position, normalisation ni MLP. La dernière requête voit uniquement les tokens déjà présents. Sans information de position, permuter les tokens précédents conserve le résultat. Une attention élevée ne suffit pas à établir une explication causale.</dd>
+</dl></section>
+</main>
+</div>
+</body>
+</html>
