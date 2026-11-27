@@ -1,0 +1,12 @@
+{
+  "name": "microalbert-lab-g0-checks",
+  "private": true,
+  "version": "0.0.0",
+  "description": "G0 documentation browser verification only; not an application",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
